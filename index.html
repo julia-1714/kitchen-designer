@@ -60,7 +60,12 @@
   /* 3d controls overlay */
   .ctl{position:absolute;top:14px;right:14px;width:230px;background:rgba(39,43,49,.92);backdrop-filter:blur(8px);
     border:1px solid rgba(197,165,114,.25);border-radius:11px;z-index:5;overflow:hidden}
-  .ctl .h{padding:9px 12px;font-size:9px;letter-spacing:.26em;color:var(--gold);font-weight:700;text-transform:uppercase;border-bottom:1px solid var(--line)}
+  .ctl .h{padding:9px 12px;font-size:9px;letter-spacing:.26em;color:var(--gold);font-weight:700;text-transform:uppercase;border-bottom:1px solid var(--line);cursor:pointer;display:flex;justify-content:space-between;align-items:center;user-select:none}
+  .ctl .h:hover{background:rgba(197,165,114,.08)}
+  .ctl .h .chev{transition:transform .2s}
+  .ctl.collapsed .h{border-bottom:0}
+  .ctl.collapsed .h .chev{transform:rotate(-90deg)}
+  .ctl.collapsed .ctlbody{display:none}
   .ctl .g{padding:10px 12px;border-bottom:1px solid var(--line)}.ctl .g:last-child{border:0}
   .ctl .l{font-size:9px;letter-spacing:.14em;color:var(--muted);text-transform:uppercase;margin-bottom:7px}
   .ctl .r{display:flex;flex-wrap:wrap;gap:5px}
@@ -120,19 +125,15 @@
             <div class="advl">Anthropic API key <span>— needed when running this file outside Claude.ai</span></div>
             <input type="password" id="apiKey" placeholder="sk-ant-…" autocomplete="off">
           </div>
-          <div class="advbox">
-            <div class="advl">Or paste a layout JSON <span>— works with no network; ask Claude in chat to generate it from your image</span></div>
-            <textarea id="jsonIn" rows="5" placeholder='{"units":"in","room":{...},"walls":[...]}'></textarea>
-            <button class="btn ghost" id="renderJson" style="margin-top:8px">Render JSON</button>
-          </div>
         </div>
       </div>
     </section>
     <!-- 3D -->
     <section class="view" id="v-m3d">
       <div id="app3d" style="position:absolute;inset:0"></div>
-      <div class="ctl">
-        <div class="h">Finishes &amp; View</div>
+      <div class="ctl" id="ctl">
+        <div class="h" id="ctlHead">Finishes &amp; View <span class="chev">▾</span></div>
+        <div class="ctlbody">
         <div class="g"><div class="l">Cabinet</div><div class="r" id="cabRow"></div></div>
         <div class="g"><div class="l">Countertop</div><div class="r" id="topRow"></div></div>
         <div class="g"><div class="l">View</div><div class="r" id="viewRow">
@@ -142,6 +143,7 @@
           <label class="toggle">Wall cabinets <input type="checkbox" id="tUp" checked></label>
           <label class="toggle">Labels <input type="checkbox" id="tLab"></label>
           <label class="toggle">Auto-rotate <input type="checkbox" id="tSpin"></label></div>
+        </div>
       </div>
       <div class="hint">Drag orbit · Scroll zoom · Right-drag pan</div>
     </section>
@@ -206,11 +208,11 @@ const DEMO={units:"in",room:{width:254,depth:200},walls:[
    {code:"BASE",kind:"drawer",x:87,w:30,drawers:true}],
   upper:[
    {code:"W313512L",kind:"wall",x:0,w:30},
-   {code:"W303512L",kind:"wall",x:57,w:30},
-   {code:"W183512L",kind:"wall",x:87,w:18}],
+   {code:"W303512L",kind:"wall",x:63,w:30},
+   {code:"W183512L",kind:"wall",x:93,w:18}],
   windows:[{x:30,w:33,sill:42,head:78}]}],
  islands:[
-  {code:"30B34",label:"Peninsula",attachedTo:"right",x:188,z:122,w:66,d:26,stools:3},
+  {code:"30B34",label:"Peninsula",attachedTo:"right",x:188,z:117,w:66,d:26,stools:3},
   {code:"BEP161901 · B69110R · DB301516 · BED1334",label:"Lower run",attachedTo:null,x:94,z:124,w:24,d:64,stools:0}]};
 
 /* =================== state =================== */
@@ -250,12 +252,6 @@ function gotoTab(id){[].forEach.call(tabs.children,function(x){x.classList.toggl
 /* =================== analyze =================== */
 const statusEl=document.getElementById('status');
 document.getElementById('demo').onclick=function(){statusEl.textContent='';loadLayout(DEMO);};
-document.getElementById('renderJson').onclick=function(){
-  const raw=document.getElementById('jsonIn').value.trim();if(!raw){statusEl.textContent='Paste a layout JSON first.';return;}
-  try{let t=raw.replace(/```json/gi,'').replace(/```/g,'').trim();const f=t.indexOf('{'),l=t.lastIndexOf('}');if(f>=0)t=t.slice(f,l+1);
-    statusEl.textContent='';loadLayout(JSON.parse(t));}
-  catch(e){statusEl.innerHTML='That JSON did not parse ('+(e.message||'error')+'). Check for a missing brace or comma.';}
-};
 
 function parseModelJSON(data){
   let txt=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
@@ -285,7 +281,7 @@ document.getElementById('analyze').onclick=async function(){
     const net=/load failed|failed to fetch|networkerror/i.test(err&&err.message||'');
     if(net){
       statusEl.innerHTML="Couldn't reach the AI service. The built-in connection only works inside Claude.ai. "+
-        "Paste an <b>Anthropic API key</b> below, or paste a <b>layout JSON</b> (ask Claude in chat to generate it from your image). Or click <b>Load demo</b>.";
+        "To use live analysis with your API key, download this file and open it in a normal browser (Chrome/Safari). Inside Claude.ai, click <b>Load demo</b>.";
     }else{
       statusEl.innerHTML='Analysis problem ('+(err&&err.message||'error')+'). Try a clearer image, an API key under <b>Advanced</b>, or <b>Load demo</b>.';
     }
@@ -536,14 +532,29 @@ function placeUpper(g,u){const x=u.x||0,w=u.w||24,cx=x+w/2;
 function placeWindow(g,win){const x=win.x||0,w=win.w||30,s=win.sill||40,hd=win.head||78,cx=x+w/2,cy=(s+hd)/2,h=hd-s;
   add(g,box(w,h,1,M.win),cx,cy,1.4);add(g,box(w+5,h+5,2,M.cab),cx,cy,0.4);
   for(let i=1;i<3;i++)add(g,box(1.3,h,1.6,M.cab),x+w*i/3,cy,1.8);add(g,box(w,1.3,1.6,M.cab),cx,cy,1.8);}
-function buildIsland(is){const x0=is.x||0,z0=is.z||0,w=is.w||40,d=is.d||26,bh=COUNTER_H-TOP_T,cx=x0+w/2,cz=z0+d/2;
-  add(kitchen,box(w-2,bh-1,d,M.island),cx,bh/2,cz);add(kitchen,box(w-4,TOE,d-4,M.toe),cx,TOE/2,cz);
-  const nd=Math.max(2,Math.round(w/26)),dw=w/nd;
-  for(let i=0;i<nd;i++){const xx=x0+dw/2+i*dw;add(kitchen,box(dw-1.4,bh-5,0.7,M.island),xx,bh/2,z0+0.3);add(kitchen,box(0.7,10,0.7,M.gold),xx,bh/2+6,z0-0.2);}
-  add(kitchen,box(w+1,TOP_T,d+ (is.stools?14:OVER*2),M.top),cx,COUNTER_H-TOP_T/2,cz+(is.stools?5:0));
-  for(let i=0;i<(is.stools||0);i++){const sx=x0+w*(i+1)/((is.stools)+1),sz=z0+d+11;
-    const s=new TH.Mesh(new TH.CylinderGeometry(7,7,2,18),M.darkSteel);s.position.set(sx,26,sz);s.castShadow=true;kitchen.add(s);
-    const lg=new TH.Mesh(new TH.CylinderGeometry(1.1,1.6,25,10),M.gold);lg.position.set(sx,12.5,sz);kitchen.add(lg);}
+function wallRunEnd(id){var m=0;((layout&&layout.walls)||[]).forEach(function(w){if(w.id===id)(w.base||[]).forEach(function(u){m=Math.max(m,(u.x||0)+(u.w||0));});});return m;}
+function buildIsland(is){
+  var x0=is.x||0,z0=is.z||0,w=is.w||40,d=is.d||26,att=is.attachedTo;
+  /* snap an attached peninsula flush to its wall, and butt it to the end of that wall's counter run */
+  if(att==='right'){x0=roomW-w;var er=wallRunEnd('right');if(er>0)z0=er;}
+  else if(att==='left'){x0=0;var el=wallRunEnd('left');if(el>0)z0=el;}
+  else if(att==='back'){z0=0;var eb=wallRunEnd('back');if(eb>0)x0=eb;}
+  else if(att==='front'){z0=roomD-d;var ef=wallRunEnd('front');if(ef>0)x0=ef;}
+  var bh=COUNTER_H-TOP_T,cx=x0+w/2,cz=z0+d/2;
+  add(kitchen,box(w,bh-1,d,M.island),cx,bh/2,cz);
+  add(kitchen,box(w-4,TOE,d-4,M.toe),cx,TOE/2,cz);
+  var nd=Math.max(2,Math.round(w/26)),dw=w/nd;
+  for(var i=0;i<nd;i++){var xx=x0+dw/2+i*dw;add(kitchen,box(dw-1.4,bh-5,0.7,M.island),xx,bh/2,z0+0.3);add(kitchen,box(0.7,10,0.7,M.gold),xx,bh/2+6,z0-0.2);}
+  /* counter: footprint + seating overhang (+z), overlapping the wall and the run so the L has no seam */
+  var ov=is.stools?13:OVER*2, cw=w, cd=d+ov, ccx=cx, ccz=cz+ov/2;
+  if(att==='right'){cw+=1.5;ccx+=0.75;cd+=2;ccz-=1;}
+  else if(att==='left'){cw+=1.5;ccx-=0.75;cd+=2;ccz-=1;}
+  else if(att==='back'){cd+=1.5;ccz-=0.75;}
+  else if(att==='front'){cd+=1.5;ccz+=0.75;}
+  add(kitchen,box(cw,TOP_T,cd,M.top),ccx,COUNTER_H-TOP_T/2,ccz);
+  for(var k=0;k<(is.stools||0);k++){var sx=x0+w*(k+1)/((is.stools)+1),sz=z0+d+11;
+    var st=new TH.Mesh(new TH.CylinderGeometry(7,7,2,18),M.darkSteel);st.position.set(sx,26,sz);st.castShadow=true;kitchen.add(st);
+    var lg=new TH.Mesh(new TH.CylinderGeometry(1.1,1.6,25,10),M.gold);lg.position.set(sx,12.5,sz);kitchen.add(lg);}
   labelSprite(is.code||is.label||'ISLAND',cx,COUNTER_H+6,cz,kitchen);}
 
 /* camera + controls */
@@ -576,6 +587,7 @@ function initControls(){let drag=false,pan=false,px=0,py=0;const el=renderer.dom
   const topRow=document.getElementById('topRow');
   Object.keys(COUNTERS).forEach(function(k,i){const c=document.createElement('div');c.className='chip'+(i===0?' on':'');c.textContent=k;
     c.onclick=function(){[].forEach.call(topRow.children,function(x){x.classList.remove('on');});c.classList.add('on');setCounter(k);};topRow.appendChild(c);});
+  document.getElementById('ctlHead').onclick=function(){document.getElementById('ctl').classList.toggle('collapsed');};
   document.getElementById('tUp').onchange=function(){if(upperGroup)upperGroup.visible=this.checked;};
   document.getElementById('tLab').onchange=function(){const v=this.checked;labelSprites.forEach(function(s){s.visible=v;});};
   document.getElementById('tSpin');
