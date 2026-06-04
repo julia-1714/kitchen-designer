@@ -204,7 +204,8 @@ const SYS=[
 "3) OVER-FRIDGE CABINET: if a cabinet is drawn above the fridge, include it as an upper at the SAME x as the fridge with kind 'wall', bottom about 72, h about 12-15, and d about 24 (deeper than a normal 12-inch upper). Do not omit it.",
 "4) ISLANDS: a rectangle drawn AWAY from the walls (free-standing, not against a wall) is an ISLAND or peninsula — output it in islands[], never as a wall. If a sink or cooktop is drawn on the island, set \"sink\":true (or \"appliance\"). Codes like SB / HSI / ISB indicate a sink. Do not miss a center island.",
 "5) Tall units (REF refrigerator, TP tall pantry/utility, oven towers) run floor-to-ceiling and have no countertop on top.",
-"NOMENCLATURE: W=wall(upper) cabinet, B=base, DB=drawer base, FD/FDB=finished/full-height drawer base, SB=sink base, SFDB=sink front drawer base, ISB/HSI=island sink base, TP=tall pantry/utility, REF=refrigerator, RANGE=range/stove, DW=dishwasher, WB/BC/CFD=blind or corner cabinet, MW=microwave cabinet, VAL=valance/light-rail, WEP/BEP/EP/BED=end panel, FDI/FI=filler, BT=base specialty. A 6-digit code is WIDTH-HEIGHT-DEPTH in inches; a trailing L or R is the door hinge. A VAL (valance) with no cabinet box usually means a WINDOW above the counter there.",
+"6) CORNERS: at an inside corner where two walls meet there is usually ONE corner cabinet — codes like BC, BCFD, CFD, EC, LS (lazy susan), BD/BLIND, or a unit drawn diagonally across the corner; wall corner = WC/WEC. Mark it kind:'corner'. Put the corner cabinet on ONE wall only, as the unit nearest the junction (so it is the last unit of one wall, at the highest x, or the first unit of the other). Then START the adjoining wall's first regular cabinet about 24in away from the corner so the two runs do NOT both fill the corner. Never place a corner cabinet on both walls.",
+"NOMENCLATURE: W=wall(upper) cabinet, B=base, DB=drawer base, FD/FDB=finished/full-height drawer base, SB=sink base, SFDB=sink front drawer base, ISB/HSI=island sink base, TP=tall pantry/utility, REF=refrigerator, RANGE=range/stove, DW=dishwasher, BC/BCFD/CFD/EC=base corner, WC/WEC=wall corner, LS=lazy susan, BD/BLIND=blind corner, MW=microwave cabinet, VAL=valance/light-rail, WEP/BEP/EP/BED=end panel, FDI/FI=filler, BT=base specialty. A 6-digit code is WIDTH-HEIGHT-DEPTH in inches; a trailing L or R is the door hinge. A VAL (valance) with no cabinet box usually means a WINDOW above the counter there.",
 "DIMENSIONS: Use the printed dimension chains for widths and x-positions; estimate only when a value is unreadable so the wall units sum to the wall length.",
 "OUTPUT: Return ONLY minified JSON (no prose, no markdown fences). Schema:",
 '{"units":"in","room":{"width":N,"depth":N},"walls":[{"id":"back|right|left|front","label":"","length":N,"base":[{"code":"","kind":"base|drawer|appliance|sink|filler|corner","appliance":"fridge|range|hood|dishwasher|oven|microwave|null","x":N,"w":N,"h":N,"d":N,"drawers":true}],"upper":[{"code":"","kind":"wall|valance|hood|corner|microwave","x":N,"w":N,"h":N,"bottom":N}],"windows":[{"x":N,"w":N,"sill":N,"head":N}]}],"islands":[{"code":"","label":"","attachedTo":"right|left|back|front|null","x":N,"z":N,"w":N,"d":N,"stools":N,"sink":false,"appliance":"sink|cooktop|null"}]}',
@@ -547,14 +548,37 @@ function buildWall(w){
   const tf=WALLTF[w.id]||WALLTF.back;
   const gBase=new TH.Group();gBase.rotation.y=tf.rot;gBase.position.set(tf.pos[0],0,tf.pos[2]);kitchen.add(gBase);
   const gUp=new TH.Group();gUp.rotation.y=tf.rot;gUp.position.set(tf.pos[0],0,tf.pos[2]);upperGroup.add(gUp);
+  const len=w.length||wallSpan(w);
   /* base */
-  w.base.forEach(function(u){placeBase(gBase,u);});
+  w.base.forEach(function(u){placeBase(gBase,u,len);});
   /* uppers */
-  w.upper.forEach(function(u){placeUpper(gUp,u);});
+  w.upper.forEach(function(u){placeUpper(gUp,u,len);});
   /* windows */
   w.windows.forEach(function(win){placeWindow(gBase,win);});
 }
-function placeBase(g,u){const x=u.x||0,w=u.w||24,cx=x+w/2,ap=u.appliance,bh=COUNTER_H-TOP_T-TOE;
+/* corner cabinet: a deep square unit tucked into the wall junction with a 45° angled door */
+function placeCorner(g,u,L,isUpper){
+  var w=u.w||36, S=Math.max(22,Math.min(w,38));
+  var isEnd=((u.x||0)+w/2) >= (L||120)/2;       /* corner at far end of the wall vs the start */
+  var x0=isEnd ? (L||S)-S : 0, cx=x0+S/2, cz=S/2;
+  var dir=isEnd?1:-1, rotY=isEnd?Math.PI/4:-Math.PI/4;
+  if(isUpper){
+    var bot=u.bottom!=null?u.bottom:WALL_BOT, h=u.h||WALL_H;
+    add(g,box(S,h,S,M.cab),cx,bot+h/2,cz);
+    var ud=box(S*1.32,h-2,0.7,M.cab); ud.position.set(cx-dir*S*0.16,bot+h/2,cz+S*0.18); ud.rotation.y=rotY; ud.castShadow=true; g.add(ud);
+    add(g,box(0.7,h*0.4,0.7,M.gold),cx-dir*S*0.16,bot+6,cz+S*0.18+0.6);
+    labelSprite(u.code||'CORNER',cx,bot+h+4,cz,kitchen);return;
+  }
+  var bh=COUNTER_H-TOP_T-TOE;
+  add(g,box(S,bh,S,M.cab),cx,TOE+bh/2,cz);
+  add(g,box(S-3,TOE,S-3,M.toe),cx,TOE/2,cz);
+  add(g,box(S+OVER,TOP_T,S+OVER,M.top),cx,COUNTER_H-TOP_T/2,cz);   /* wraps the corner */
+  var dr=box(S*1.32,bh-3,0.8,M.cab); dr.position.set(cx-dir*S*0.16,TOE+bh/2,cz+S*0.2); dr.rotation.y=rotY; dr.castShadow=true; g.add(dr);
+  add(g,box(0.8,12,0.8,M.gold),cx-dir*S*0.16,TOE+bh/2,cz+S*0.2+0.7);
+  labelSprite(u.code||'CORNER',cx,COUNTER_H+5,cz,kitchen);
+}
+function placeBase(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2,ap=u.appliance,bh=COUNTER_H-TOP_T-TOE;
+  if(u.kind==='corner'){placeCorner(g,u,L,false);return;}
   if(ap==='fridge'){const fw=Math.max(30,w);add(g,box(fw,70,30,M.steel),x+fw/2,35,15);
     add(g,box(1.4,40,1.4,M.darkSteel),x+fw-1,40,30.2);add(g,box(fw+0.4,0.6,0.6,M.darkSteel),x+fw/2,46,30.1);
     labelSprite(u.code||'FRIDGE',x+fw/2,72,15,kitchen);return;}
@@ -573,7 +597,8 @@ function placeBase(g,u){const x=u.x||0,w=u.w||24,cx=x+w/2,ap=u.appliance,bh=COUN
     add(g,box(w-12,5,BASE_DEP-12,M.darkSteel),cx,COUNTER_H-2,BASE_DEP/2);
     add(g,box(1.4,8,1.4,M.steel),cx,COUNTER_H+4,5);add(g,box(1.2,1.2,7,M.steel),cx,COUNTER_H+7.5,8);}
   labelSprite(u.code||'',cx,COUNTER_H+5,BASE_DEP/2,kitchen);}
-function placeUpper(g,u){const x=u.x||0,w=u.w||24,cx=x+w/2;
+function placeUpper(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2;
+  if(u.kind==='corner'){placeCorner(g,u,L,true);return;}
   if(u.kind==='valance'){add(g,box(w,3,1.5,M.cab),cx,WALL_BOT-1,1.6);return;}
   if(u.kind==='hood'){add(g,box(w,8,22,M.steel),cx,WALL_BOT+8,11);add(g,box(11,18,11,M.steel),cx,WALL_BOT+18,9);
     add(g,box(w-6,6,16,M.steel),cx,WALL_BOT+3,12);labelSprite(u.code||'HOOD',cx,WALL_BOT+30,11,kitchen);return;}
