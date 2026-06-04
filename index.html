@@ -60,6 +60,9 @@
   #adv input,#adv textarea,#adv select{width:100%;background:#16181c;border:1px solid var(--line);border-radius:7px;
     color:var(--ink);font-size:12px;padding:9px 11px;font-family:ui-monospace,Menlo,monospace;resize:vertical}
   #adv input:focus,#adv textarea:focus,#adv select:focus{outline:none;border-color:var(--gold)}
+  #redoNotes{width:100%;background:#16181c;border:1px solid var(--line);border-radius:8px;color:var(--ink);
+    font-size:13px;padding:11px 13px;font-family:inherit;line-height:1.5;resize:vertical}
+  #redoNotes:focus{outline:none;border-color:var(--gold)}
   /* 3d controls overlay */
   .ctl{position:absolute;top:14px;right:14px;width:230px;background:rgba(39,43,49,.92);backdrop-filter:blur(8px);
     border:1px solid rgba(197,165,114,.25);border-radius:11px;z-index:5;overflow:hidden}
@@ -110,6 +113,7 @@
       <div class="tab dis" data-t="plan">Floor Plan</div>
       <div class="tab dis" data-t="elev">2D Elevation</div>
       <div class="tab dis" data-t="sched">Schedule</div>
+      <div class="tab dis" data-t="redo">Re-analyze</div>
     </div>
   </header>
   <main>
@@ -171,6 +175,16 @@
     <!-- ELEVATION -->
     <section class="view" id="v-elev"><div class="scroll"><h2 class="pagettl">2D Elevations</h2>
       <div id="elevWrap"></div></div></section>
+    <!-- RE-ANALYZE -->
+    <section class="view" id="v-redo"><div class="scroll" style="max-width:660px">
+      <h2 class="pagettl">Re-analyze</h2>
+      <p style="color:var(--muted);font-size:13px;line-height:1.65;margin:0 0 14px">
+        Not happy with the result? Describe what to fix or add — be specific about which wall, counts,
+        overlaps, or missing pieces — and the AI re-reads the same drawing with your notes in mind.</p>
+      <textarea id="redoNotes" rows="6" placeholder="e.g. Left wall has too many lower cabinets — remove the extras. The fridge is overlapping the back-wall cabinets; give it its own slot. Add the upper cabinet above the fridge. There is an island with a sink in the middle that's missing."></textarea>
+      <div style="margin-top:12px"><button class="btn" id="redoBtn">Re-analyze drawing</button></div>
+      <div id="redoStatus" style="margin-top:12px;font-size:12px;color:var(--gold);min-height:18px"></div>
+    </div></section>
   </main>
 </div>
 
@@ -182,15 +196,21 @@ const TH=THREE;
 
 /* =================== analysis prompt =================== */
 const SYS=[
-"You are a kitchen cabinet plan analyst. Analyze the uploaded kitchen drawing(s) and/or photo(s).",
+"You are a kitchen cabinet plan analyst. Analyze the uploaded kitchen drawing(s) and/or photo(s) and rebuild the layout exactly as drawn.",
 "METHOD: Go WALL BY WALL. Count every cabinet, appliance and window ONE BY ONE in order along each wall, left-to-right (or, for a right-hand wall, from the back corner toward the front). Place each counted unit at the position it was counted in.",
-"NOMENCLATURE: W=wall(upper) cabinet, B=base, DB=drawer base, FDB=full-height drawer base, WB/BC/CFD=blind or corner cabinet, MW=microwave cabinet, VAL=valance/light-rail, BEP/BED=base end panel/decorative end, BT=base specialty. A 6-digit code is WIDTH-HEIGHT-DEPTH in inches; a trailing L or R is the door hinge. A VAL (valance) with no cabinet box almost always means a WINDOW above the counter at that spot.",
-"DIMENSIONS: Use the printed dimension chains to set widths and x-positions. If a value is unreadable, estimate from neighbors so the wall units sum to the wall length.",
+"CRITICAL ACCURACY RULES — follow all of these:",
+"1) Output ONLY units that are actually labeled or clearly drawn. Do NOT invent, pad or duplicate cabinets. The number of base cabinets you list for a wall must equal the number actually shown — no extras.",
+"2) NO OVERLAPS. Lay each wall's units edge-to-edge: every unit's x equals the previous unit's x plus its width. Two units on the same wall must never share an x-range. The refrigerator (REF) is a tall appliance that takes its own slot — no cabinet may sit in the fridge's x-range. The base x-ranges should be sequential and sum to about the wall length.",
+"3) OVER-FRIDGE CABINET: if a cabinet is drawn above the fridge, include it as an upper at the SAME x as the fridge with kind 'wall', bottom about 72, h about 12-15, and d about 24 (deeper than a normal 12-inch upper). Do not omit it.",
+"4) ISLANDS: a rectangle drawn AWAY from the walls (free-standing, not against a wall) is an ISLAND or peninsula — output it in islands[], never as a wall. If a sink or cooktop is drawn on the island, set \"sink\":true (or \"appliance\"). Codes like SB / HSI / ISB indicate a sink. Do not miss a center island.",
+"5) Tall units (REF refrigerator, TP tall pantry/utility, oven towers) run floor-to-ceiling and have no countertop on top.",
+"NOMENCLATURE: W=wall(upper) cabinet, B=base, DB=drawer base, FD/FDB=finished/full-height drawer base, SB=sink base, SFDB=sink front drawer base, ISB/HSI=island sink base, TP=tall pantry/utility, REF=refrigerator, RANGE=range/stove, DW=dishwasher, WB/BC/CFD=blind or corner cabinet, MW=microwave cabinet, VAL=valance/light-rail, WEP/BEP/EP/BED=end panel, FDI/FI=filler, BT=base specialty. A 6-digit code is WIDTH-HEIGHT-DEPTH in inches; a trailing L or R is the door hinge. A VAL (valance) with no cabinet box usually means a WINDOW above the counter there.",
+"DIMENSIONS: Use the printed dimension chains for widths and x-positions; estimate only when a value is unreadable so the wall units sum to the wall length.",
 "OUTPUT: Return ONLY minified JSON (no prose, no markdown fences). Schema:",
-'{"units":"in","room":{"width":N,"depth":N},"walls":[{"id":"back|right|left|front","label":"","length":N,"base":[{"code":"","kind":"base|drawer|appliance|sink|filler|corner","appliance":"fridge|range|hood|dishwasher|oven|microwave|null","x":N,"w":N,"h":N,"d":N,"drawers":true}],"upper":[{"code":"","kind":"wall|valance|hood|corner|microwave","x":N,"w":N,"h":N,"bottom":N}],"windows":[{"x":N,"w":N,"sill":N,"head":N}]}],"islands":[{"code":"","label":"","attachedTo":"right|left|back|null","x":N,"z":N,"w":N,"d":N,"stools":N}]}',
+'{"units":"in","room":{"width":N,"depth":N},"walls":[{"id":"back|right|left|front","label":"","length":N,"base":[{"code":"","kind":"base|drawer|appliance|sink|filler|corner","appliance":"fridge|range|hood|dishwasher|oven|microwave|null","x":N,"w":N,"h":N,"d":N,"drawers":true}],"upper":[{"code":"","kind":"wall|valance|hood|corner|microwave","x":N,"w":N,"h":N,"bottom":N}],"windows":[{"x":N,"w":N,"sill":N,"head":N}]}],"islands":[{"code":"","label":"","attachedTo":"right|left|back|front|null","x":N,"z":N,"w":N,"d":N,"stools":N,"sink":false,"appliance":"sink|cooktop|null"}]}',
 "COORDINATES: x = inches from that wall's start corner. The 'back' wall runs along the top; the 'right' wall runs down the right side with x measured from the back-right corner. Put appliances in the base array with kind:'appliance' and the appliance field set. Keep codes short. Return ONLY the JSON object."
 ].join(" ");
-const USERTXT="Analyze this kitchen and return the JSON layout using the method described.";
+const USERTXT="Analyze this kitchen and return the JSON layout using the method and accuracy rules described. Double-check there are no overlapping units and no invented cabinets before answering.";
 
 /* =================== demo layout =================== */
 const DEMO={units:"in",room:{width:254,depth:200},walls:[
@@ -273,11 +293,19 @@ function parseModelJSON(data){
   return JSON.parse(txt);
 }
 
-document.getElementById('analyze').onclick=async function(){
-  const btn=this;btn.disabled=true;statusEl.innerHTML='<span class="spin"></span>Analyzing the drawing wall by wall…';
+async function runAnalysis(feedback, statEl, btn){
+  if(!images.some(Boolean)){statEl.innerHTML='Upload a drawing or photo first (on the Upload tab).';return;}
+  btn.disabled=true;statEl.innerHTML='<span class="spin"></span>'+(feedback?'Re-reading the drawing with your notes…':'Analyzing the drawing wall by wall…');
   const content=[];
   images.forEach(function(im){if(im)content.push({type:'image',source:{type:'base64',media_type:im.mt,data:im.b64}});});
-  content.push({type:'text',text:USERTXT});
+  let txt=USERTXT;
+  if(feedback){
+    txt="Re-analyze the SAME kitchen drawing(s). Here is the layout you produced last time:\n"+JSON.stringify(layout)+
+        "\n\nThe user reports these problems to FIX:\n"+feedback+
+        "\n\nReturn a corrected FULL JSON layout that fixes every issue above while keeping what was already correct. "+
+        "Re-apply all accuracy rules: no invented or duplicated cabinets, no overlapping units (the fridge gets its own slot), include any over-fridge upper, and capture every island (including ones with a sink). Return ONLY the JSON.";
+  }
+  content.push({type:'text',text:txt});
   const model=(document.getElementById('modelSel')&&document.getElementById('modelSel').value)||'claude-sonnet-4-6';
   const body=JSON.stringify({model:model,max_tokens:4096,system:SYS,messages:[{role:'user',content:content}]});
   const key=(document.getElementById('apiKey').value||'').trim();
@@ -288,20 +316,23 @@ document.getElementById('analyze').onclick=async function(){
     let data;try{data=await resp.json();}catch(e){throw new Error('Bad response from API (status '+resp.status+')');}
     if(!resp.ok)throw new Error('API '+resp.status+': '+((data&&data.error&&data.error.message)||'request rejected'));
     const json=parseModelJSON(data);
-    statusEl.textContent='';loadLayout(json);
+    btn.disabled=false;statEl.textContent='';loadLayout(json);
   }catch(err){
     btn.disabled=false;
     const net=/load failed|failed to fetch|networkerror/i.test(err&&err.message||'');
     if(net){
-      statusEl.innerHTML="Couldn't reach the AI service. The built-in connection only works inside Claude.ai. "+
-        "To use live analysis with your API key, download this file and open it in a normal browser (Chrome/Safari). Inside Claude.ai, click <b>Load demo</b>.";
+      statEl.innerHTML="Couldn't reach the AI service. The built-in connection only works inside Claude.ai. "+
+        "To use live analysis with your API key, open this file in a normal browser. Inside Claude.ai, click <b>Load demo</b>.";
     }else if(/\b404\b|not.?found|model/i.test(err&&err.message||'')){
-      statusEl.innerHTML='That model is not available on your key ('+(err&&err.message||'')+'). Pick a different one from the <b>Model</b> dropdown and try again.';
+      statEl.innerHTML='That model is not available on your key ('+(err&&err.message||'')+'). Pick a different one from the <b>Model</b> dropdown and try again.';
     }else{
-      statusEl.innerHTML='Analysis problem ('+(err&&err.message||'error')+'). Try a clearer image, an API key under <b>Advanced</b>, or <b>Load demo</b>.';
+      statEl.innerHTML='Analysis problem ('+(err&&err.message||'error')+'). Try a clearer image, check your API key/model, or <b>Load demo</b>.';
     }
   }
-};
+}
+document.getElementById('analyze').onclick=function(){runAnalysis(null,statusEl,this);};
+document.getElementById('redoBtn').onclick=function(){
+  runAnalysis((document.getElementById('redoNotes').value||'').trim(),document.getElementById('redoStatus'),this);};
 
 function loadLayout(json){
   layout=normalize(json);
@@ -313,8 +344,18 @@ function loadLayout(json){
   showDrawings();
   enableTabs();gotoTab('m3d');
 }
+function deoverlap(arr){ /* tile units edge-to-edge in x order so nothing overlaps */
+  if(!arr||!arr.length)return arr;
+  arr.sort(function(a,b){return (a.x||0)-(b.x||0);});
+  var cursor=arr[0].x||0;
+  for(var i=0;i<arr.length;i++){var u=arr[i];u.w=u.w||24;
+    if((u.x||0)<cursor-0.5){u.x=cursor;} else {cursor=u.x||0;}
+    cursor=(u.x||0)+u.w;}
+  return arr;
+}
 function normalize(j){j=j||{};j.room=j.room||{width:240,depth:160};
-  j.walls=(j.walls||[]).map(function(w){w.base=w.base||[];w.upper=w.upper||[];w.windows=w.windows||[];return w;});
+  j.walls=(j.walls||[]).map(function(w){w.base=w.base||[];w.upper=w.upper||[];w.windows=w.windows||[];
+    deoverlap(w.base);return w;});
   j.islands=j.islands||[];return j;}
 
 /* =================== drawings tab =================== */
@@ -567,6 +608,13 @@ function buildIsland(is){
   else if(att==='back'){cd+=1.5;ccz-=0.75;}
   else if(att==='front'){cd+=1.5;ccz+=0.75;}
   add(kitchen,box(cw,TOP_T,cd,M.top),ccx,COUNTER_H-TOP_T/2,ccz);
+  if(is.sink||is.appliance==='sink'){var bw=Math.min(w*0.55,28),bd=Math.min(d*0.6,17);
+    add(kitchen,box(bw,1,bd,M.steel),cx,COUNTER_H+0.4,cz);
+    add(kitchen,box(bw-4,5,bd-4,M.darkSteel),cx,COUNTER_H-2,cz);
+    add(kitchen,box(1.4,8,1.4,M.steel),cx,COUNTER_H+4,cz-bd/2+2);
+    add(kitchen,box(1.2,1.2,7,M.steel),cx,COUNTER_H+7.5,cz-bd/2+5);}
+  else if(is.appliance==='cooktop'){for(var ci=0;ci<4;ci++){var t=new TH.Mesh(new TH.TorusGeometry(3.5,0.55,8,16),M.gasket);
+    t.rotation.x=Math.PI/2;t.position.set(cx-7+(ci%2)*14,COUNTER_H+0.6,cz-6+(ci<2?0:12));kitchen.add(t);}}
   for(var k=0;k<(is.stools||0);k++){var sx=x0+w*(k+1)/((is.stools)+1),sz=z0+d+11;
     var st=new TH.Mesh(new TH.CylinderGeometry(7,7,2,18),M.darkSteel);st.position.set(sx,26,sz);st.castShadow=true;kitchen.add(st);
     var lg=new TH.Mesh(new TH.CylinderGeometry(1.1,1.6,25,10),M.gold);lg.position.set(sx,12.5,sz);kitchen.add(lg);}
