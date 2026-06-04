@@ -1398,6 +1398,7 @@ function App() {
   const [dragHint,  setDragHint]    = useState(false);
   const [showPricing,   setShowPricing]   = useState(false);
   const [showEditRoom,  setShowEditRoom]  = useState(false);
+  const [openSec, setOpenSec] = useState({ app:true, cab:true, isl:true });
   const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem('qcr_api_key') || ''; } catch (e3) { return ''; } });
   const saveApiKey = (k) => { setApiKey(k); try { localStorage.setItem('qcr_api_key', k); } catch (e4) {} };
   const [notes, setNotes] = useState('');
@@ -2560,9 +2561,12 @@ function App() {
             , React.createElement('div', { style: { height:1, background:C.border }})
 
             /* Appliance positions */
-            , React.createElement('div', { style: { fontSize:9, color:C.gold, letterSpacing:2, fontFamily:"DM Mono,monospace", textTransform:"uppercase", marginBottom:2 }}, "Appliance Positions" )
-            , React.createElement('div', { style: { fontSize:9, color:"#555", fontFamily:"DM Mono,monospace", lineHeight:1.5 }}, "x = distance from left wall · z = distance from back wall"            )
-            , (_optionalChain([result, 'access', _33 => _33.layouts, 'optionalAccess', _34 => _34[layoutIdx], 'optionalAccess', _35 => _35.appliances])||[])
+            , React.createElement('div', { onClick: ()=>setOpenSec(s=>Object.assign({},s,{app:!s.app})), style: { display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer", marginBottom:2, userSelect:"none" }}
+              , React.createElement('span', { style: { fontSize:9, color:C.gold, letterSpacing:2, fontFamily:"DM Mono,monospace", textTransform:"uppercase" }}, "Appliance Positions" )
+              , React.createElement('span', { style: { fontSize:10, color:C.gold, fontFamily:"DM Mono,monospace" }}, openSec.app ? "\u25BE" : "\u25B8" )
+            )
+            , openSec.app && React.createElement('div', { style: { fontSize:9, color:"#555", fontFamily:"DM Mono,monospace", lineHeight:1.5 }}, "x = distance from left wall · z = distance from back wall"            )
+            , openSec.app && (_optionalChain([result, 'access', _33 => _33.layouts, 'optionalAccess', _34 => _34[layoutIdx], 'optionalAccess', _35 => _35.appliances])||[])
               .map((app,realIdx)=>({app,realIdx}))
               .filter(({app})=>app.type!=='hood_fan'&&app.type!=='microwave')
               .map(({app,realIdx})=>(
@@ -2602,7 +2606,7 @@ function App() {
               )
             ))
 
-            , React.createElement('div', { style: { display:"flex", gap:6, flexWrap:"wrap" }}
+            , openSec.app && React.createElement('div', { style: { display:"flex", gap:6, flexWrap:"wrap" }}
               , [["fridge","+ Fridge",{type:"fridge",x:0,z:0,width:2.75,depth:2.5,height:6.7,label:"Fridge"}]
                 ,["stove","+ Range",{type:"stove",x:5,z:0,width:2.5,depth:2,height:3,label:"Range"}]
                 ,["sink","+ Sink",{type:"sink",x:8,z:0,width:2.5,depth:2,height:3,label:"Sink"}]
@@ -2615,9 +2619,12 @@ function App() {
             , React.createElement('div', { style: { height:1, background:C.border }})
 
             /* Cabinetry — add / edit / remove base, upper, pantry */
-            , React.createElement('div', { style: { fontSize:9, color:C.gold, letterSpacing:2, fontFamily:"DM Mono,monospace", textTransform:"uppercase", marginBottom:2 }}, "Cabinetry" )
-            , React.createElement('div', { style: { fontSize:9, color:"#555", fontFamily:"DM Mono,monospace", lineHeight:1.5 }}, "x/z = position of the cabinet's left-back corner. width runs along the wall, depth into the room." )
-            , (result.layouts[layoutIdx].cabinets||[])
+            , React.createElement('div', { onClick: ()=>setOpenSec(s=>Object.assign({},s,{cab:!s.cab})), style: { display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer", marginBottom:2, userSelect:"none" }}
+              , React.createElement('span', { style: { fontSize:9, color:C.gold, letterSpacing:2, fontFamily:"DM Mono,monospace", textTransform:"uppercase" }}, "Cabinetry" )
+              , React.createElement('span', { style: { fontSize:10, color:C.gold, fontFamily:"DM Mono,monospace" }}, openSec.cab ? "\u25BE" : "\u25B8" )
+            )
+            , openSec.cab && React.createElement('div', { style: { fontSize:9, color:"#555", fontFamily:"DM Mono,monospace", lineHeight:1.5 }}, "x/z = position of the cabinet's left-back corner. width runs along the wall, depth into the room." )
+            , openSec.cab && (result.layouts[layoutIdx].cabinets||[])
                 .map((c,realIdx)=>({c,realIdx}))
                 .filter(o=>o.c.type==='base'||o.c.type==='upper'||o.c.type==='pantry')
                 .map(o=>{
@@ -2649,7 +2656,7 @@ function App() {
                       })
                   );
                 })
-            , React.createElement('div', { style: { display:"flex", gap:8 }}
+            , openSec.cab && React.createElement('div', { style: { display:"flex", gap:8 }}
               , React.createElement('button', { onClick: ()=>setResult(prev=>{const next=JSON.parse(JSON.stringify(prev));if(!next.layouts[layoutIdx].cabinets)next.layouts[layoutIdx].cabinets=[];next.layouts[layoutIdx].cabinets.push({type:"base",x:1,z:0,width:3,depth:2,height:3});return next;}),
                   style: { flex:1, background:"transparent", border:`1px solid ${C.gold}`, color:C.gold, padding:"7px 0", borderRadius:4, cursor:"pointer", fontSize:11, fontFamily:"DM Mono,monospace" }}, "+ Base")
               , React.createElement('button', { onClick: ()=>setResult(prev=>{const next=JSON.parse(JSON.stringify(prev));if(!next.layouts[layoutIdx].cabinets)next.layouts[layoutIdx].cabinets=[];next.layouts[layoutIdx].cabinets.push({type:"upper",x:1,z:0,width:3,depth:1.25,height:2.5,wallHeight:4.5});return next;}),
@@ -2661,8 +2668,11 @@ function App() {
             , React.createElement('div', { style: { height:1, background:C.border }})
 
             /* Islands & Peninsulas — add / edit / remove */
-            , React.createElement('div', { style: { fontSize:9, color:C.gold, letterSpacing:2, fontFamily:"DM Mono,monospace", textTransform:"uppercase", marginBottom:2 }}, "Islands & Peninsulas" )
-            , (result.layouts[layoutIdx].cabinets||[])
+            , React.createElement('div', { onClick: ()=>setOpenSec(s=>Object.assign({},s,{isl:!s.isl})), style: { display:"flex", justifyContent:"space-between", alignItems:"center", cursor:"pointer", marginBottom:2, userSelect:"none" }}
+              , React.createElement('span', { style: { fontSize:9, color:C.gold, letterSpacing:2, fontFamily:"DM Mono,monospace", textTransform:"uppercase" }}, "Islands & Peninsulas" )
+              , React.createElement('span', { style: { fontSize:10, color:C.gold, fontFamily:"DM Mono,monospace" }}, openSec.isl ? "\u25BE" : "\u25B8" )
+            )
+            , openSec.isl && (result.layouts[layoutIdx].cabinets||[])
                 .map((c,realIdx)=>({c,realIdx}))
                 .filter(o=>o.c.type==='island')
                 .map(o=>{
@@ -2702,7 +2712,7 @@ function App() {
                     )
                   );
                 })
-            , React.createElement('div', { style: { display:"flex", gap:8 }}
+            , openSec.isl && React.createElement('div', { style: { display:"flex", gap:8 }}
               , React.createElement('button', { onClick: ()=>setResult(prev=>{const next=JSON.parse(JSON.stringify(prev));if(!next.layouts[layoutIdx].cabinets)next.layouts[layoutIdx].cabinets=[];const d=roomDims(next.layouts[layoutIdx],next);const cw=Math.min(5,Math.max(3,d.RW*0.35));next.layouts[layoutIdx].cabinets.push({type:"island",x:Math.round((d.RW/2-cw/2)*4)/4,z:Math.round((d.RL/2)*4)/4,width:cw,depth:2.5,height:3,seating_stools:3,seating_overhang:1.2,has_sink:false});return next;}),
                   style: { flex:1, background:"transparent", border:`1px solid ${C.gold}`, color:C.gold, padding:"7px 0", borderRadius:4, cursor:"pointer", fontSize:11, fontFamily:"DM Mono,monospace" }}, "+ Island")
               , React.createElement('button', { onClick: ()=>setResult(prev=>{const next=JSON.parse(JSON.stringify(prev));if(!next.layouts[layoutIdx].cabinets)next.layouts[layoutIdx].cabinets=[];const d=roomDims(next.layouts[layoutIdx],next);next.layouts[layoutIdx].cabinets.push({type:"island",attached:"back",x:Math.round((d.RW/2-1.5)*4)/4,z:0,width:3,depth:Math.max(4,Math.round(d.RL*0.4)),height:3,seating_stools:2,seating_overhang:1.2,has_sink:false});return next;}),
