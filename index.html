@@ -162,7 +162,7 @@ function splitCabinetsAroundAppliances(cabinets, appliances, RW, RH){
   const apps = appliances || [];
   const out = [];
   (cabinets||[]).forEach(c=>{
-    if(c.type!=='base' && c.type!=='upper'){ out.push(c); return; } // islands/pantry pass through (same ref)
+    if(c.type!=='base' && c.type!=='upper' && c.type!=='pantry'){ out.push(c); return; } // islands pass through
     const onBack = c.z < 0.7;
     const onLeft = !onBack && c.x < 0.7 && c.depth >= c.width;
     const onRight= !onBack && !onLeft && (c.x + c.width > RW - 0.7) && c.depth >= c.width;
@@ -173,10 +173,13 @@ function splitCabinetsAroundAppliances(cabinets, appliances, RW, RH){
     const dwIv     = apps.filter(a => a.type==='dishwasher' && onWall(a)).map(axisOf);
     const fridgeIv = apps.filter(a => a.type==='fridge'     && onWall(a)).map(axisOf);
     const fridges  = apps.filter(a => a.type==='fridge'     && onWall(a));
-    // Base runs are carved around stove/fridge/dishwasher. Upper runs are carved
-    // around the stove (microwave/hood) but KEPT over the fridge — and lifted.
-    const removeIv = c.type==='upper' ? stoveIv : stoveIv.concat(fridgeIv, dwIv);
-    const liftIv   = c.type==='upper' ? fridgeIv : [];
+    // base: carved around stove/fridge/dishwasher. upper: carved around stove, lifted over fridge.
+    // pantry/tall: never sits on the floor where the fridge is — the part over the fridge
+    // becomes a cabinet ON TOP of the fridge; the rest stays a full-height tower.
+    let removeIv, liftIv;
+    if(c.type==='base'){ removeIv = stoveIv.concat(fridgeIv, dwIv); liftIv = []; }
+    else if(c.type==='upper'){ removeIv = stoveIv; liftIv = fridgeIv; }
+    else { removeIv = []; liftIv = fridgeIv; }
     const s   = onBack ? c.x : c.z;
     const len = onBack ? c.width : c.depth;
     const e   = s + len;
@@ -190,7 +193,10 @@ function splitCabinetsAroundAppliances(cabinets, appliances, RW, RH){
       if(onBack){ piece.x=a; piece.width=b-a; } else { piece.z=a; piece.depth=b-a; }
       if(_inAny(m, liftIv)){
         const f = fridges[0] || { height:6.5 };
-        piece.wallHeight = Math.min(Math.max(c.wallHeight || 4.5, (f.height || 6.5) + 0.1), RHv - 0.8);
+        const lift = Math.min(Math.max(c.type==='pantry' ? 4.5 : (c.wallHeight||4.5), (f.height||6.5)+0.1), RHv-0.8);
+        piece.type = 'upper';        // over-fridge piece sits on top of the fridge
+        piece.wallHeight = lift;
+        piece.height = RHv - lift;
       }
       out.push(piece);
     }
@@ -2492,7 +2498,7 @@ function App() {
         , React.createElement('div', {}
           , React.createElement('div', { style: { fontSize:12, fontWeight:800, color:C.gold, letterSpacing:2, fontFamily:"Outfit,sans-serif" }}, "QUARTZ CITY RENO"  )
           , React.createElement('div', { style: { fontSize:10, color:C.muted }}, "AI 3D Layout Designer"   )
-          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · upper mount-height control"   )
+          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · no cabinet overlaps fridge"   )
         )
         , phase==="result" && React.createElement(React.Fragment, null
           , React.createElement('div', { style: { marginLeft:"auto", display:"flex", background:"#1f1f1f", border:`1px solid ${C.border}`, borderRadius:7, padding:3, gap:2, width:340 }}
