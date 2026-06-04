@@ -1682,20 +1682,20 @@ function App() {
         // group so it moves with the island when dragged.
         const islandSinkApp = (layout.appliances||[]).find(a => a.type === "sink" && isInsideIsland(a, cab));
         if (cab.has_sink || islandSinkApp) {
-          const sinkBasin = new THREE.Mesh(
-            new THREE.BoxGeometry(cab.width * 0.38, 0.12, cab.depth * 0.45),
-            new THREE.MeshLambertMaterial({ color:0x8899aa })
-          );
-          sinkBasin.position.set(cab.x + cab.width * 0.5, ctY2 + 0.015, cab.z + cab.depth * 0.45);
-          addI(sinkBasin);
+          const sx = cab.x + cab.width * 0.5, sz = cab.z + cab.depth * 0.5;
+          const bw = cab.width * 0.4, bd = cab.depth * 0.5;
+          // stainless rim flush with the counter
+          const rim = new THREE.Mesh(new THREE.BoxGeometry(bw+0.07, 0.03, bd+0.07), new THREE.MeshLambertMaterial({ color:0xb8bcc0 }));
+          rim.position.set(sx, ctY2+0.05, sz); addI(rim);
+          // recessed dark basin set into the counter
+          const sinkBasin = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.18, bd), new THREE.MeshLambertMaterial({ color:0x3a3e42 }));
+          sinkBasin.position.set(sx, ctY2 - 0.04, sz); addI(sinkBasin);
           // Faucet
-          const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.04,0.12,8), new THREE.MeshLambertMaterial({ color:0xc0c8d0 }));
-          faucetBase.position.set(cab.x + cab.width * 0.5, ctY2 + 0.16, cab.z + cab.depth * 0.28);
-          addI(faucetBase);
-          const faucetSpout = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.24,8), new THREE.MeshLambertMaterial({ color:0xc0c8d0 }));
-          faucetSpout.rotation.x = Math.PI / 2.5;
-          faucetSpout.position.set(cab.x + cab.width * 0.5, ctY2 + 0.32, cab.z + cab.depth * 0.38);
-          addI(faucetSpout);
+          const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.16,10), new THREE.MeshLambertMaterial({ color:0xc4c8cc }));
+          faucetBase.position.set(sx, ctY2 + 0.13, sz - bd*0.4); addI(faucetBase);
+          const faucetSpout = new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.028,bd*0.6,10), new THREE.MeshLambertMaterial({ color:0xc4c8cc }));
+          faucetSpout.rotation.x = Math.PI / 2.3;
+          faucetSpout.position.set(sx, ctY2 + 0.34, sz - bd*0.2); addI(faucetSpout);
         }
 
         return; // all island geometry done
@@ -2492,7 +2492,7 @@ function App() {
         , React.createElement('div', {}
           , React.createElement('div', { style: { fontSize:12, fontWeight:800, color:C.gold, letterSpacing:2, fontFamily:"Outfit,sans-serif" }}, "QUARTZ CITY RENO"  )
           , React.createElement('div', { style: { fontSize:10, color:C.muted }}, "AI 3D Layout Designer"   )
-          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · fridge+sink+window fixes"   )
+          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · island sink + range-overhead toggle"   )
         )
         , phase==="result" && React.createElement(React.Fragment, null
           , React.createElement('div', { style: { marginLeft:"auto", display:"flex", background:"#1f1f1f", border:`1px solid ${C.border}`, borderRadius:7, padding:3, gap:2, width:340 }}
@@ -2625,6 +2625,27 @@ function App() {
                 React.createElement('button', { key: spec[0], onClick: ()=>setResult(prev=>{const next=JSON.parse(JSON.stringify(prev));if(!next.layouts[layoutIdx].appliances)next.layouts[layoutIdx].appliances=[];next.layouts[layoutIdx].appliances.push(Object.assign({},spec[2]));return next;}),
                   style: { flexBasis:"48%", flexGrow:1, background:"transparent", border:`1px solid ${C.gold}`, color:C.gold, padding:"7px 0", borderRadius:4, cursor:"pointer", fontSize:11, fontFamily:"DM Mono,monospace" }}, spec[1])
               )))
+
+            , openSec.app && React.createElement('div', { style: { display:"flex", alignItems:"center", gap:6, marginTop:2 }}
+              , React.createElement('div', { style: { fontSize:9, color:C.muted, fontFamily:"DM Mono,monospace", width:80 }}, "Above range")
+              , React.createElement('select', {
+                  value: (result.layouts[layoutIdx].appliances||[]).some(a=>a.type==='microwave') ? 'microwave'
+                       : (result.layouts[layoutIdx].appliances||[]).some(a=>a.type==='hood_fan') ? 'hood' : 'none',
+                  onChange: e=>{ const v=e.target.value; setResult(prev=>{
+                    const next=JSON.parse(JSON.stringify(prev));
+                    const L=next.layouts[layoutIdx];
+                    L.appliances=(L.appliances||[]).filter(a=>a.type!=='microwave'&&a.type!=='hood_fan');
+                    const stove=L.appliances.find(a=>a.type==='stove');
+                    const sx=stove?stove.x:5, sw=stove?stove.width:2.5, sz=stove?stove.z:0;
+                    if(v==='microwave') L.appliances.push({type:'microwave',x:sx,z:sz,width:sw,depth:1.2,height:1.4,from_floor:4.6,label:'Microwave'});
+                    else if(v==='hood') L.appliances.push({type:'hood_fan',x:sx,z:sz,width:sw,depth:1.5,height:1.5,label:'Hood Fan'});
+                    return next; }); },
+                  style: { flex:1, background:"#111", border:`1px solid ${C.border}`, color:C.text, padding:"4px 6px", borderRadius:4, fontSize:11, fontFamily:"DM Mono,monospace" }}
+                , React.createElement('option', { value:"microwave" }, "Microwave (OTR)")
+                , React.createElement('option', { value:"hood" }, "Range hood")
+                , React.createElement('option', { value:"none" }, "Nothing")
+              )
+            )
 
             , React.createElement('div', { style: { height:1, background:C.border }})
 
