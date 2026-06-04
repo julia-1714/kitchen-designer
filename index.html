@@ -2492,7 +2492,7 @@ function App() {
         , React.createElement('div', {}
           , React.createElement('div', { style: { fontSize:12, fontWeight:800, color:C.gold, letterSpacing:2, fontFamily:"Outfit,sans-serif" }}, "QUARTZ CITY RENO"  )
           , React.createElement('div', { style: { fontSize:10, color:C.muted }}, "AI 3D Layout Designer"   )
-          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · island sink + range-overhead toggle"   )
+          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · upper mount-height control"   )
         )
         , phase==="result" && React.createElement(React.Fragment, null
           , React.createElement('div', { style: { marginLeft:"auto", display:"flex", background:"#1f1f1f", border:`1px solid ${C.border}`, borderRadius:7, padding:3, gap:2, width:340 }}
@@ -2685,6 +2685,16 @@ function App() {
                           , React.createElement('span', { style: { fontSize:9, color:"#555", fontFamily:"DM Mono,monospace" }}, "ft")
                         );
                       })
+                    , c.type==='upper' && React.createElement('div', { style: { display:"flex", alignItems:"center", gap:6, marginBottom:2 }}
+                      , React.createElement('div', { style: { fontSize:9, color:C.gold, fontFamily:"DM Mono,monospace", width:62 }}, "Mount ht")
+                      , React.createElement('input', { type:"number", min:0, max:9, step:0.25,
+                          value: c.wallHeight!=null ? c.wallHeight : 4.5,
+                          onChange: e=>setField('wallHeight', parseFloat(e.target.value)||0),
+                          style: { flex:1, background:"#111", border:`1px solid ${C.border}`, color:C.text, padding:"4px 8px", borderRadius:4, fontSize:13, fontFamily:"DM Mono,monospace", outline:"none" },
+                          onFocus: e=>e.target.style.borderColor=C.gold, onBlur: e=>e.target.style.borderColor=C.border })
+                      , React.createElement('span', { style: { fontSize:9, color:"#555", fontFamily:"DM Mono,monospace" }}, "ft")
+                    )
+                    , c.type==='upper' && React.createElement('div', { style: { fontSize:8, color:"#666", fontFamily:"DM Mono,monospace", lineHeight:1.4 }}, "Mount ht = floor to bottom of cabinet. ~5.8 to sit above a fridge.")
                   );
                 })
             , openSec.cab && React.createElement('div', { style: { display:"flex", gap:8 }}
