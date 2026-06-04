@@ -163,10 +163,12 @@ function splitCabinetsAroundAppliances(cabinets, appliances, RW, RH){
   const out = [];
   (cabinets||[]).forEach(c=>{
     if(c.type!=='base' && c.type!=='upper' && c.type!=='pantry'){ out.push(c); return; } // islands pass through
-    const sideWall = c.depth > c.width + 0.01;          // deeper than wide ⇒ runs along a side wall
-    const onLeft  = sideWall && c.x < 0.7;
-    const onRight = sideWall && !onLeft && (c.x + c.width > RW - 0.7);
-    const onBack  = !sideWall && c.z < 0.9;
+    const atLeft  = c.x < 0.7;
+    const atRight = (c.x + c.width) > RW - 0.7;
+    const sideWall = (atLeft || atRight) && c.depth > c.width + 0.01;  // against a side wall AND deeper than wide
+    const onLeft  = sideWall && atLeft;
+    const onRight = sideWall && !onLeft && atRight;
+    const onBack  = !sideWall;                                          // everything else runs along x
     if(!onBack && !onLeft && !onRight){ out.push(c); return; }
     const axisOf = a => onBack ? [a.x, a.x + a.width] : [a.z, a.z + (a.depth||2)];
     const onWall = a => onBack ? (a.z < 0.9) : (onLeft ? a.x < 0.9 : (a.x + a.width > RW - 0.9));
@@ -224,7 +226,7 @@ function _bandsOverlap(b1,b2){ return b1[0] < b2[1]-0.01 && b2[0] < b1[1]-0.01; 
 function _ovl1d(a0,a1,b0,b1){ return Math.min(a1,b1) - Math.max(a0,b0); }
 function resolveCabinetOverlaps(cabs, apps, RW, RH){
   const RHv = RH || 9;
-  const appObs = (apps||[]).filter(a => a.type!=='microwave' && a.type!=='hood_fan')
+  const appObs = (apps||[]).filter(a => a.type!=='microwave' && a.type!=='hood_fan' && a.type!=='sink')
     .map(a => ({ rect:_rectOf(a), band:_bandOf(a,RHv,true) }));
   const order = c => (c.type==='pantry'?3 : c.type==='base'?2 : c.type==='upper'?1 : -1);
   const sorted = (cabs||[]).map((c,i)=>({c,i})).sort((A,B)=> (order(B.c)-order(A.c)) || (A.i-B.i));
@@ -234,7 +236,9 @@ function resolveCabinetOverlaps(cabs, apps, RW, RH){
     if(c.type!=='base' && c.type!=='upper' && c.type!=='pantry'){
       result.push(c); placed.push({ rect:_rectOf(c), band:_bandOf(c,RHv,false) }); return;
     }
-    const onBack = !(c.depth > c.width + 0.01);   // deeper than wide ⇒ side wall (corner-safe)
+    const atLeft  = c.x < 0.7;
+    const atRight = (c.x + c.width) > RW - 0.7;
+    const onBack  = !((atLeft || atRight) && c.depth > c.width + 0.01);  // side only if against a side wall
     const cb = _bandOf(c, RHv, false);
     const cr = _rectOf(c);
     const obstacles = appObs.concat(placed).filter(o => _bandsOverlap(cb, o.band));
@@ -2006,6 +2010,20 @@ function App() {
         const cx  = app.x + app.width/2;
         const cz  = app.z + (app.depth||2)/2;
         const bw  = app.width * 0.6, bd = (app.depth||2) * 0.5;
+        // The sink is the one element that SITS ON a base cabinet. If nothing
+        // underlies it, build a sink-base so the basin is never floating.
+        const hasBaseUnder = (layout.cabinets||[]).some(cc =>
+          (cc.type==='base' || cc.type==='island' || cc.type==='pantry') &&
+          cc.x < app.x + app.width - 0.1 && cc.x + cc.width > app.x + 0.1 &&
+          cc.z < app.z + (app.depth||2) - 0.1 && cc.z + cc.depth > app.z + 0.1);
+        if (!hasBaseUnder) {
+          const body = new THREE.Mesh(new THREE.BoxGeometry(app.width, 3, app.depth||2), new THREE.MeshLambertMaterial({ color:0xf3f1ec }));
+          body.position.set(cx, 1.5, cz); body.castShadow=true; body.receiveShadow=true; appGroup.add(body);
+          const ctop = new THREE.Mesh(new THREE.BoxGeometry(app.width+0.05, 0.09, (app.depth||2)+0.05), new THREE.MeshLambertMaterial({ map:marbleTex, color:0xffffff }));
+          ctop.position.set(cx, 3.045, cz); appGroup.add(ctop);
+          const kick = new THREE.Mesh(new THREE.BoxGeometry(app.width, 0.14, 0.04), new THREE.MeshLambertMaterial({ color:0x111111 }));
+          kick.position.set(cx, 0.07, app.z + 0.02); appGroup.add(kick);
+        }
         // stainless rim flush with the counter
         const rim = new THREE.Mesh(new THREE.BoxGeometry(bw+0.07, 0.03, bd+0.07), new THREE.MeshLambertMaterial({ color:0xb8bcc0 }));
         rim.position.set(cx, ctY+0.05, cz); appGroup.add(rim);
@@ -2558,7 +2576,7 @@ function App() {
         , React.createElement('div', {}
           , React.createElement('div', { style: { fontSize:12, fontWeight:800, color:C.gold, letterSpacing:2, fontFamily:"Outfit,sans-serif" }}, "QUARTZ CITY RENO"  )
           , React.createElement('div', { style: { fontSize:10, color:C.muted }}, "AI 3D Layout Designer"   )
-          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · collision resolver (no overlaps)"   )
+          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · resolver fix + sink-on-base"   )
         )
         , phase==="result" && React.createElement(React.Fragment, null
           , React.createElement('div', { style: { marginLeft:"auto", display:"flex", background:"#1f1f1f", border:`1px solid ${C.border}`, borderRadius:7, padding:3, gap:2, width:340 }}
