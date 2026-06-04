@@ -2302,6 +2302,22 @@ function App() {
         "Describe each window the SAME way as cabinets — by wall and position:\n" +
         "{\"wall\":\"back|left|right\", \"offset\":<feet from that wall's start corner; back = from left, sides = from back>, \"width\":<feet>, \"from_floor\":<feet from floor to the windowsill, ~3.5 when above a counter>, \"height\":<feet, ~3.5 typical>}\n\n" +
 
+        "FUNCTIONAL KITCHEN LOGIC — every kitchen must actually be usable. For the as-drawn Current Layout, use these to resolve anything ambiguous and to catch your OWN misreads (if the drawing seems to break one of these, re-examine — you probably read it wrong). For the U-Shape and Open Galley, follow them fully:\n" +
+        "- DOOR & DRAWER ACCESS: never place a cabinet, island, or appliance directly in front of the fridge, oven, dishwasher, or another cabinet — leave room to open it. Nothing sits in the swing space of a fridge or oven door.\n" +
+        "- CLEARANCE: ~3.5 ft of open floor in front of the fridge; 3–4 ft of aisle between an island and the runs that face it. If a layout can't keep these, make the island smaller or drop it — do not jam it in.\n" +
+        "- WORK TRIANGLE: sink, range, and fridge form a triangle (each leg ~4–9 ft) — never cram all three into one short run.\n" +
+        "- LANDING SPACE: keep counter (a base cabinet) beside the range, sink, and fridge; never bury an appliance between two tall units.\n" +
+        "- SINK: usually under/near a window, with the dishwasher right beside it.\n" +
+        "- RANGE: not in a corner; hood or microwave directly above it; uppers do NOT cover the range or a window.\n" +
+        "- FRIDGE: at the END of a run or beside a tall pantry, not mid-counter; a cabinet may sit ABOVE it but the floor in front stays clear.\n" +
+        "- TALL units (pantry / fridge surround) go at the ENDS of runs, not breaking the middle of a counter run.\n" +
+        "- Base cabinets tile the counter continuously; uppers run above them except over the range, the sink window, and the fridge.\n\n" +
+
+        "REFERENCE LAYOUTS — what a correct kitchen looks like in THIS schema. Pick the closest to the drawing as a structural guide, then replace with the real walls/dimensions/positions:\n" +
+        "- GALLEY / STRAIGHT (back wall only): continuous base run; fridge at one end, range mid-run with hood/microwave above, sink offset to one side; uppers above except over the range; optional island parallel to the run with a 3.5+ ft aisle.\n" +
+        "- L-SHAPE (back + ONE side wall): two runs meeting at a corner; fridge near the open end of one leg; range on one leg and sink on the other (triangle); a corner cabinet at the junction; island only if clearances hold.\n" +
+        "- U-SHAPE (back + LEFT + RIGHT walls): runs on three walls; classic triangle = fridge on one leg, range on the back, sink on the third leg; a tall pantry at one end; uppers on all three walls except over range / sink-window / fridge.\n\n" +
+
         "Return ONLY this JSON:\n" +
         "{\n" +
         "  \"room_type\": \"kitchen\",\n" +
@@ -2349,6 +2365,7 @@ function App() {
         "- Never add windows that are not visible\n" +
         "- ALWAYS include exactly one refrigerator appliance — every kitchen has one. If its label is unclear, place it at the end of the longest run on the wall where the drawing shows a tall/deep unit.\n" +
         "- Base cabinets must tile each wall with NO empty gaps, except the exact slot where an appliance (range, fridge, dishwasher) sits. Do not leave blank space between cabinets.\n" +
+        "- Never place a cabinet, island, or appliance directly in front of the fridge or any appliance/cabinet door — always leave clearance to open it\n" +
         "- The sum of back-wall pos+length segments should match the back-wall dimension line";
 
 
@@ -2372,7 +2389,7 @@ function App() {
         body: JSON.stringify({
           model:"claude-sonnet-4-6",
           max_tokens:32000,
-          system:"You are a kitchen renovation expert who builds accurate 3D models from photos and measurements. When explicit measurements are provided, use them as ground truth over visual estimates. Return ONLY raw JSON — no markdown, no backticks, no extra text.",
+          system:"You are a kitchen renovation expert who builds accurate 3D models from photos and measurements. When explicit measurements are provided, use them as ground truth over visual estimates. Lay out kitchens that are physically usable — correct clearances, a sensible work triangle, and room to open every appliance and cabinet door; never block an appliance or a cabinet. Return ONLY raw JSON — no markdown, no backticks, no extra text.",
           messages:[{ role:"user", content:contentArr }],
         }),
       });
@@ -2606,7 +2623,7 @@ function App() {
         , React.createElement('div', {}
           , React.createElement('div', { style: { fontSize:12, fontWeight:800, color:C.gold, letterSpacing:2, fontFamily:"Outfit,sans-serif" }}, "QUARTZ CITY RENO"  )
           , React.createElement('div', { style: { fontSize:10, color:C.muted }}, "AI 3D Layout Designer"   )
-          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · Refine mode (re-analyze w/ reference + corrections)"   )
+          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · kitchen-logic rules + reference layouts"   )
         )
         , phase==="result" && React.createElement(React.Fragment, null
           , React.createElement('div', { style: { marginLeft:"auto", display:"flex", background:"#1f1f1f", border:`1px solid ${C.border}`, borderRadius:7, padding:3, gap:2, width:340 }}
