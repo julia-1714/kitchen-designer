@@ -541,18 +541,35 @@ function build3D(L){
   const rw=box(5,116,roomD+16,M.wall);rw.position.set(roomW+3,58,roomD/2);rw.receiveShadow=true;kitchen.add(rw);
   upperGroup=new TH.Group();kitchen.add(upperGroup);
   L.walls.forEach(buildWall);
-  addCornerCounters(L);
+  buildCornerCabinets(L);
   L.islands.forEach(buildIsland);
   frameCamera();
 }
-function addCornerCounters(L){
-  var has={};L.walls.forEach(function(w){if((w.base||[]).length)has[w.id]=true;});
-  var BD=BASE_DEP;
-  function slab(x0,z0){add(kitchen,box(BD,TOP_T,BD,M.top),x0+BD/2,COUNTER_H-TOP_T/2,z0+BD/2);}
-  if(has.back&&has.right)slab(roomW-BD,0);
-  if(has.back&&has.left)slab(0,0);
-  if(has.front&&has.right)slab(roomW-BD,roomD-BD);
-  if(has.front&&has.left)slab(0,roomD-BD);
+/* Build a real corner cabinet at each inside corner, in WORLD space so it always
+   fills the junction with no gap. Fires wherever two adjoining walls both have base runs. */
+function buildCornerCabinets(L){
+  var hasB={},hasU={};
+  L.walls.forEach(function(w){if((w.base||[]).length)hasB[w.id]=true;if((w.upper||[]).length)hasU[w.id]=true;});
+  var corners=[];
+  if(hasB.back&&hasB.left)  corners.push({x:0,     z:0,     ix:1, iz:1, up:hasU.back&&hasU.left});
+  if(hasB.back&&hasB.right) corners.push({x:roomW, z:0,     ix:-1,iz:1, up:hasU.back&&hasU.right});
+  if(hasB.front&&hasB.left) corners.push({x:0,     z:roomD, ix:1, iz:-1,up:hasU.front&&hasU.left});
+  if(hasB.front&&hasB.right)corners.push({x:roomW, z:roomD, ix:-1,iz:-1,up:hasU.front&&hasU.right});
+  corners.forEach(buildCornerUnit);
+}
+function buildCornerUnit(c){
+  var S=26, bh=COUNTER_H-TOP_T-TOE, ang=Math.atan2(c.ix,c.iz);
+  var ccx=c.x+c.ix*S/2, ccz=c.z+c.iz*S/2;
+  add(kitchen,box(S,bh,S,M.cab),ccx,TOE+bh/2,ccz);
+  add(kitchen,box(S-3,TOE,S-3,M.toe),ccx,TOE/2,ccz);
+  add(kitchen,box(S+OVER*2,TOP_T,S+OVER*2,M.top),ccx,COUNTER_H-TOP_T/2,ccz); /* counter wraps the corner */
+  var dr=box(S*1.34,bh-3,0.8,M.cab); dr.position.set(ccx+c.ix*1.2,TOE+bh/2,ccz+c.iz*1.2); dr.rotation.y=ang; dr.castShadow=true; kitchen.add(dr);
+  add(kitchen,box(0.8,12,0.8,M.gold),ccx+c.ix*2.2,TOE+bh/2,ccz+c.iz*2.2);
+  labelSprite('CORNER',ccx,COUNTER_H+5,ccz,kitchen);
+  if(c.up){var bot=WALL_BOT,h=WALL_H;
+    add(upperGroup,box(S*0.86,h,S*0.86,M.cab),ccx,bot+h/2,ccz);
+    var ud=box(S*1.12,h-2,0.7,M.cab); ud.position.set(ccx+c.ix*1.2,bot+h/2,ccz+c.iz*1.2); ud.rotation.y=ang; ud.castShadow=true; upperGroup.add(ud);
+    add(upperGroup,box(0.7,12,0.7,M.gold),ccx+c.ix*2,bot+6,ccz+c.iz*2);}
 }
 function buildWall(w){
   const tf=WALLTF[w.id]||WALLTF.back;
@@ -588,7 +605,7 @@ function placeCorner(g,u,L,isUpper){
   labelSprite(u.code||'CORNER',cx,COUNTER_H+5,cz,kitchen);
 }
 function placeBase(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2,ap=u.appliance,bh=COUNTER_H-TOP_T-TOE;
-  if(u.kind==='corner'){placeCorner(g,u,L,false);return;}
+  if(u.kind==='corner')return; /* corners are built in world space by buildCornerCabinets */
   if(ap==='fridge'){const fw=Math.max(30,w);add(g,box(fw,70,30,M.steel),x+fw/2,35,15);
     add(g,box(1.4,40,1.4,M.darkSteel),x+fw-1,40,30.2);add(g,box(fw+0.4,0.6,0.6,M.darkSteel),x+fw/2,46,30.1);
     labelSprite(u.code||'FRIDGE',x+fw/2,72,15,kitchen);return;}
@@ -608,7 +625,7 @@ function placeBase(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2,ap=u.appliance,bh=CO
     add(g,box(1.4,8,1.4,M.steel),cx,COUNTER_H+4,5);add(g,box(1.2,1.2,7,M.steel),cx,COUNTER_H+7.5,8);}
   labelSprite(u.code||'',cx,COUNTER_H+5,BASE_DEP/2,kitchen);}
 function placeUpper(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2;
-  if(u.kind==='corner'){placeCorner(g,u,L,true);return;}
+  if(u.kind==='corner')return; /* built in world space by buildCornerCabinets */
   if(u.kind==='valance'){add(g,box(w,3,1.5,M.cab),cx,WALL_BOT-1,1.6);return;}
   if(u.kind==='hood'){add(g,box(w,8,22,M.steel),cx,WALL_BOT+8,11);add(g,box(11,18,11,M.steel),cx,WALL_BOT+18,9);
     add(g,box(w-6,6,16,M.steel),cx,WALL_BOT+3,12);labelSprite(u.code||'HOOD',cx,WALL_BOT+30,11,kitchen);return;}
