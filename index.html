@@ -541,8 +541,18 @@ function build3D(L){
   const rw=box(5,116,roomD+16,M.wall);rw.position.set(roomW+3,58,roomD/2);rw.receiveShadow=true;kitchen.add(rw);
   upperGroup=new TH.Group();kitchen.add(upperGroup);
   L.walls.forEach(buildWall);
+  addCornerCounters(L);
   L.islands.forEach(buildIsland);
   frameCamera();
+}
+function addCornerCounters(L){
+  var has={};L.walls.forEach(function(w){if((w.base||[]).length)has[w.id]=true;});
+  var BD=BASE_DEP;
+  function slab(x0,z0){add(kitchen,box(BD,TOP_T,BD,M.top),x0+BD/2,COUNTER_H-TOP_T/2,z0+BD/2);}
+  if(has.back&&has.right)slab(roomW-BD,0);
+  if(has.back&&has.left)slab(0,0);
+  if(has.front&&has.right)slab(roomW-BD,roomD-BD);
+  if(has.front&&has.left)slab(0,roomD-BD);
 }
 function buildWall(w){
   const tf=WALLTF[w.id]||WALLTF.back;
@@ -558,23 +568,23 @@ function buildWall(w){
 }
 /* corner cabinet: a deep square unit tucked into the wall junction with a 45° angled door */
 function placeCorner(g,u,L,isUpper){
-  var w=u.w||36, S=Math.max(22,Math.min(w,38));
+  var w=u.w||36, S=Math.max(23,Math.min(w,26));
   var isEnd=((u.x||0)+w/2) >= (L||120)/2;       /* corner at far end of the wall vs the start */
   var x0=isEnd ? (L||S)-S : 0, cx=x0+S/2, cz=S/2;
   var dir=isEnd?1:-1, rotY=isEnd?Math.PI/4:-Math.PI/4;
   if(isUpper){
     var bot=u.bottom!=null?u.bottom:WALL_BOT, h=u.h||WALL_H;
     add(g,box(S,h,S,M.cab),cx,bot+h/2,cz);
-    var ud=box(S*1.32,h-2,0.7,M.cab); ud.position.set(cx-dir*S*0.16,bot+h/2,cz+S*0.18); ud.rotation.y=rotY; ud.castShadow=true; g.add(ud);
-    add(g,box(0.7,h*0.4,0.7,M.gold),cx-dir*S*0.16,bot+6,cz+S*0.18+0.6);
+    var ud=box(S*1.12,h-2,0.7,M.cab); ud.position.set(cx-dir*S*0.12,bot+h/2,cz+S*0.12); ud.rotation.y=rotY; ud.castShadow=true; g.add(ud);
+    add(g,box(0.7,h*0.4,0.7,M.gold),cx-dir*S*0.12,bot+6,cz+S*0.12+0.6);
     labelSprite(u.code||'CORNER',cx,bot+h+4,cz,kitchen);return;
   }
   var bh=COUNTER_H-TOP_T-TOE;
   add(g,box(S,bh,S,M.cab),cx,TOE+bh/2,cz);
   add(g,box(S-3,TOE,S-3,M.toe),cx,TOE/2,cz);
   add(g,box(S+OVER,TOP_T,S+OVER,M.top),cx,COUNTER_H-TOP_T/2,cz);   /* wraps the corner */
-  var dr=box(S*1.32,bh-3,0.8,M.cab); dr.position.set(cx-dir*S*0.16,TOE+bh/2,cz+S*0.2); dr.rotation.y=rotY; dr.castShadow=true; g.add(dr);
-  add(g,box(0.8,12,0.8,M.gold),cx-dir*S*0.16,TOE+bh/2,cz+S*0.2+0.7);
+  var dr=box(S*1.12,bh-3,0.8,M.cab); dr.position.set(cx-dir*S*0.12,TOE+bh/2,cz+S*0.12); dr.rotation.y=rotY; dr.castShadow=true; g.add(dr);
+  add(g,box(0.8,12,0.8,M.gold),cx-dir*S*0.12,TOE+bh/2,cz+S*0.12+0.7);
   labelSprite(u.code||'CORNER',cx,COUNTER_H+5,cz,kitchen);
 }
 function placeBase(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2,ap=u.appliance,bh=COUNTER_H-TOP_T-TOE;
