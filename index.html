@@ -1,3 +1,6 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
 <!-- Quartz City Reno — Kitchen Plan Analyzer (AI-powered) -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -94,6 +97,8 @@
   .reset{position:absolute;left:14px;bottom:14px;z-index:5}
   .hint{position:absolute;left:14px;bottom:14px;font-size:10px;color:var(--muted);background:rgba(20,22,25,.7);padding:6px 10px;border-radius:7px;z-index:4}
 </style>
+</head>
+<body>
 
 <div id="root">
   <header>
@@ -602,3 +607,5 @@ let drawProfile=null;
 window.addEventListener('resize',function(){if(layout){drawFloorPlan(layout);drawElevations(layout);}});
 })();
 </script>
+</body>
+</html>
