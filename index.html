@@ -1475,6 +1475,9 @@ function App() {
   const [showPricing,   setShowPricing]   = useState(false);
   const [showEditRoom,  setShowEditRoom]  = useState(false);
   const [openSec, setOpenSec] = useState({ app:true, cab:true, isl:true });
+  const [refineOpen,  setRefineOpen]  = useState(false);
+  const [corrections, setCorrections] = useState('');
+  const [refImage,    setRefImage]    = useState(null);
   const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem('qcr_api_key') || ''; } catch (e3) { return ''; } });
   const saveApiKey = (k) => { setApiKey(k); try { localStorage.setItem('qcr_api_key', k); } catch (e4) {} };
   const [notes, setNotes] = useState('');
@@ -2229,12 +2232,26 @@ function App() {
       const notesBlock = notes.trim()
         ? "CUSTOMER-PROVIDED MEASUREMENTS (use as ground truth, override visual estimates):\n" + notes.trim() + "\n\n"
         : "";
+      const correctionsBlock = corrections.trim()
+        ? "USER CORRECTIONS FROM A PRIOR ATTEMPT — AUTHORITATIVE. The previous read was wrong; apply each correction exactly and let it override what you think you see in the drawing:\n" + corrections.trim() + "\n\n"
+        : "";
+      const refNoteBlock = refImage
+        ? "A REFERENCE 3D MODEL is attached as the LAST image. It shows the CORRECT target layout. Make the Current Layout match the reference's wall arrangement, cabinet runs, appliance positions, and windows as closely as you can.\n\n"
+        : "";
+      let refImgBlock = null;
+      if (refImage) {
+        let rmt = (refImage.split(";")[0].split(":")[1] || "").toLowerCase();
+        const rdata = refImage.split(",")[1];
+        if (rmt === 'image/jpg') rmt = 'image/jpeg';
+        if (['image/jpeg','image/png','image/gif','image/webp'].indexOf(rmt) === -1) rmt = 'image/jpeg';
+        refImgBlock = { type:"image", source:{ type:"base64", media_type: rmt, data: rdata } };
+      }
 
       const subject = valid.length
         ? "these kitchen photos"
         : "the measurements and description provided (no photos)";
 
-      const promptText = notesBlock +
+      const promptText = notesBlock + correctionsBlock + refNoteBlock +
         "Analyze " + subject + " and return accurate kitchen layout JSON.\n\n" +
 
         "IF THIS IS A CAD FLOOR PLAN DRAWING, read these label conventions:\n" +
@@ -2335,7 +2352,7 @@ function App() {
         "- The sum of back-wall pos+length segments should match the back-wall dimension line";
 
 
-      const contentArr = [...imgs, { type:"text", text:promptText }];
+      const contentArr = [...imgs, ...(refImgBlock ? [refImgBlock] : []), { type:"text", text:promptText }];
 
       // Warn if running from file:// — some browsers block API calls
       if (window.location.protocol === 'file:') {
@@ -2589,7 +2606,7 @@ function App() {
         , React.createElement('div', {}
           , React.createElement('div', { style: { fontSize:12, fontWeight:800, color:C.gold, letterSpacing:2, fontFamily:"Outfit,sans-serif" }}, "QUARTZ CITY RENO"  )
           , React.createElement('div', { style: { fontSize:10, color:C.muted }}, "AI 3D Layout Designer"   )
-          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · windows carve cabinets + full-wall read"   )
+          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · Refine mode (re-analyze w/ reference + corrections)"   )
         )
         , phase==="result" && React.createElement(React.Fragment, null
           , React.createElement('div', { style: { marginLeft:"auto", display:"flex", background:"#1f1f1f", border:`1px solid ${C.border}`, borderRadius:7, padding:3, gap:2, width:340 }}
@@ -2611,6 +2628,12 @@ function App() {
             onMouseLeave: e=>{if(!showEditRoom){e.target.style.borderColor=C.border;e.target.style.color=C.muted;}}}, "✏ Edit Room"
 
           )
+          , React.createElement('button', { onClick: ()=>setRefineOpen(true),
+            title: "Re-analyze using a reference 3D image and/or written corrections"  ,
+            style: { background:"transparent", border:`1px solid ${C.border}`, color:C.muted, padding:"5px 10px", borderRadius:4, cursor:"pointer", fontSize:11, fontFamily:"Outfit,sans-serif", fontWeight:600 },
+            onMouseEnter: e=>{e.target.style.borderColor=C.gold;e.target.style.color=C.gold;},
+            onMouseLeave: e=>{e.target.style.borderColor=C.border;e.target.style.color=C.muted;}}, "⟳ Refine"
+          )
           , React.createElement('button', { onClick: ()=>setShowPricing(p=>!p),
             title: "Edit pricing rates"  ,
             style: { background:showPricing?C.gold:"transparent", border:`1px solid ${showPricing?C.gold:C.border}`, color:showPricing?"#000":C.muted, padding:"5px 10px", borderRadius:4, cursor:"pointer", fontSize:13 },
@@ -2618,6 +2641,49 @@ function App() {
             onMouseLeave: e=>{if(!showPricing){e.target.style.borderColor=C.border;e.target.style.color=C.muted;}}}, "⚙"
 
           )
+        )
+      )
+
+      /* ── REFINE / TROUBLESHOOT MODAL ─────────────────────────────────────── */
+      , refineOpen && React.createElement('div', { style: { position:"fixed", inset:0, background:"rgba(0,0,0,0.62)", zIndex:200, display:"flex", alignItems:"center", justifyContent:"center", padding:18 },
+          onClick: ()=>setRefineOpen(false) }
+        , React.createElement('div', { onClick: e=>e.stopPropagation(),
+            style: { background:"#16140f", border:`1px solid ${C.gold}`, borderRadius:8, width:"min(540px,94vw)", maxHeight:"88vh", overflow:"auto", padding:"20px 22px", fontFamily:"Outfit,sans-serif" }}
+          , React.createElement('div', { style: { fontSize:14, fontWeight:700, color:C.gold, letterSpacing:1.5, marginBottom:4 }}, "REFINE THE LAYOUT")
+          , React.createElement('div', { style: { fontSize:12, color:C.muted, lineHeight:1.5, marginBottom:16 }},
+              "If the read came out wrong, tell the AI what's correct and re-analyze your original drawing. This refines the layout — it does not change app code, so there's nothing to redeploy. Repeat until it's right.")
+
+          , React.createElement('div', { style: { fontSize:11, fontWeight:700, color:C.text, marginBottom:6 }}, "1 · Reference 3D model (optional)")
+          , React.createElement('div', { style: { fontSize:10, color:C.muted, marginBottom:6 }}, "Upload the correct 3D render. The AI will try to match its wall layout, cabinets, appliances, and windows.")
+          , React.createElement('label', { style: { display:"inline-block", background:"transparent", border:`1px solid ${C.gold}`, color:C.gold, padding:"6px 12px", borderRadius:4, cursor:"pointer", fontSize:11, marginBottom:4 }}
+            , refImage ? "Replace reference image" : "Choose reference image"
+            , React.createElement('input', { type:"file", accept:"image/*", style:{ display:"none" },
+                onChange: e=>{ const f=e.target.files&&e.target.files[0]; if(!f)return; const r=new FileReader(); r.onload=()=>setRefImage(r.result); r.readAsDataURL(f); } })
+          )
+          , refImage && React.createElement('div', { style: { display:"flex", alignItems:"center", gap:10, marginTop:8, marginBottom:4 }}
+            , React.createElement('img', { src: refImage, style: { width:96, height:72, objectFit:"cover", borderRadius:4, border:`1px solid ${C.border}` }})
+            , React.createElement('button', { onClick: ()=>setRefImage(null),
+                style: { background:"transparent", border:`1px solid ${C.border}`, color:"#b56", padding:"3px 10px", borderRadius:4, cursor:"pointer", fontSize:10 }}, "Remove")
+          )
+
+          , React.createElement('div', { style: { fontSize:11, fontWeight:700, color:C.text, margin:"16px 0 6px" }}, "2 · Corrections / labels (optional)")
+          , React.createElement('div', { style: { fontSize:10, color:C.muted, marginBottom:6 }}, "Plain language. One per line. These override what the AI thought it saw.")
+          , React.createElement('textarea', { value: corrections, onChange: e=>setCorrections(e.target.value),
+              placeholder: "e.g.\nFridge is on the LEFT wall, not the back\nRight wall has uppers + base from 2ft to 9ft\nWindow on the right wall above the sink, ~3ft wide\nNo cabinet over the range — microwave only",
+              rows: 5,
+              style: { width:"100%", boxSizing:"border-box", background:"#0e0c08", border:`1px solid ${C.border}`, color:C.text, padding:"8px 10px", borderRadius:5, fontSize:12, fontFamily:"DM Mono,monospace", resize:"vertical", outline:"none", lineHeight:1.5 },
+              onFocus: e=>e.target.style.borderColor=C.gold, onBlur: e=>e.target.style.borderColor=C.border })
+
+          , React.createElement('div', { style: { display:"flex", gap:10, marginTop:18 }}
+            , React.createElement('button', { onClick: ()=>{ setRefineOpen(false); analyze(); },
+                disabled: !corrections.trim() && !refImage,
+                style: { flex:2, background: (corrections.trim()||refImage)?C.gold:"#332b16", border:"none", color:(corrections.trim()||refImage)?"#000":"#666", padding:"10px 0", borderRadius:5, cursor:(corrections.trim()||refImage)?"pointer":"not-allowed", fontSize:12, fontWeight:700, fontFamily:"Outfit,sans-serif" }},
+                "⟳ Re-analyze with corrections")
+            , React.createElement('button', { onClick: ()=>setRefineOpen(false),
+                style: { flex:1, background:"transparent", border:`1px solid ${C.border}`, color:C.muted, padding:"10px 0", borderRadius:5, cursor:"pointer", fontSize:12 }}, "Cancel")
+          )
+          , React.createElement('div', { style: { fontSize:9, color:"#555", marginTop:12, lineHeight:1.5 }},
+              "Re-analyzes the same drawing you uploaded, plus the inputs above. Uses your API key. Your corrections stay for the next try, so you can keep adding to them until the layout is right.")
         )
       )
 
