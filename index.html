@@ -224,10 +224,22 @@ function _bandOf(o, RH, isApp){
 function _rectOf(o){ return [o.x, o.z, o.x+o.width, o.z+o.depth]; }
 function _bandsOverlap(b1,b2){ return b1[0] < b2[1]-0.01 && b2[0] < b1[1]-0.01; }
 function _ovl1d(a0,a1,b0,b1){ return Math.min(a1,b1) - Math.max(a0,b0); }
-function resolveCabinetOverlaps(cabs, apps, RW, RH){
+function resolveCabinetOverlaps(cabs, apps, RW, RH, windows){
   const RHv = RH || 9;
   const appObs = (apps||[]).filter(a => a.type!=='microwave' && a.type!=='hood_fan' && a.type!=='sink')
     .map(a => ({ rect:_rectOf(a), band:_bandOf(a,RHv,true) }));
+  // Windows are obstacles too — a cabinet must never cover a window. Each window
+  // occupies a thin strip on its wall, in the vertical band of the glass, so only
+  // cabinets at that height (uppers) get carved; base cabinets below it are fine.
+  const winObs = (windows||[]).map(w=>{
+    const off=w.offset||0, wd=w.width||3, ff=(w.from_floor!=null?w.from_floor:2.5), h=w.height||3.5;
+    let rect;
+    if(w.wall==='left')       rect=[0, off, 0.6, off+wd];
+    else if(w.wall==='right') rect=[RW-0.6, off, RW, off+wd];
+    else                      rect=[off, 0, off+wd, 0.6];
+    return { rect, band:[ff, ff+h] };
+  });
+  const fixedObs = appObs.concat(winObs);
   const order = c => (c.type==='pantry'?3 : c.type==='base'?2 : c.type==='upper'?1 : -1);
   const sorted = (cabs||[]).map((c,i)=>({c,i})).sort((A,B)=> (order(B.c)-order(A.c)) || (A.i-B.i));
   const placed = [];
@@ -241,7 +253,7 @@ function resolveCabinetOverlaps(cabs, apps, RW, RH){
     const onBack  = !((atLeft || atRight) && c.depth > c.width + 0.01);  // side only if against a side wall
     const cb = _bandOf(c, RHv, false);
     const cr = _rectOf(c);
-    const obstacles = appObs.concat(placed).filter(o => _bandsOverlap(cb, o.band));
+    const obstacles = fixedObs.concat(placed).filter(o => _bandsOverlap(cb, o.band));
     const removals = [];
     obstacles.forEach(o=>{
       if(onBack){
@@ -1617,7 +1629,7 @@ function App() {
     // ── CABINETS ────────────────────────────────────────────────────────
     const marbleTex = makeMarble();
     const handleMat = new THREE.MeshLambertMaterial({ color:0x1a1a1a });
-    resolveCabinetOverlaps(splitCabinetsAroundAppliances(layout.cabinets, layout.appliances, RW, RH), layout.appliances, RW, RH).forEach(cab => {
+    resolveCabinetOverlaps(splitCabinetsAroundAppliances(layout.cabinets, layout.appliances, RW, RH), layout.appliances, RW, RH, result.windows).forEach(cab => {
       const isUpper  = cab.type === "upper";
       const isIsland = cab.type === "island";
       const isPantry = cab.type === "pantry";
@@ -2255,7 +2267,8 @@ function App() {
         "ceiling_height_ft = 9 unless the drawing says otherwise.\n\n" +
 
         "STEP 2 — CABINETS (use wall / pos / length)\n" +
-        "List EVERY cabinet. Types:\n" +
+        "List EVERY cabinet on EVERY wall. If the drawing shows cabinets, uppers, a sink, or a dishwasher on a side/return wall (left or right), you MUST list that wall's full run — never leave a drawn wall empty. Walk each wall end to end (back, then left, then right) and list every unit in order. Side/return-wall cabinets use wall:\"left\" or wall:\"right\" with pos = feet from the back wall.\n" +
+        "Types:\n" +
         "- base: height 3\n" +
         "- upper: height 2.5, wallHeight 4.5 (floor to bottom of cabinet)\n" +
         "- pantry: height = ceiling_height (full floor-to-ceiling). Use for FD, FDE, TPC, TPO and any tall unit\n" +
@@ -2576,7 +2589,7 @@ function App() {
         , React.createElement('div', {}
           , React.createElement('div', { style: { fontSize:12, fontWeight:800, color:C.gold, letterSpacing:2, fontFamily:"Outfit,sans-serif" }}, "QUARTZ CITY RENO"  )
           , React.createElement('div', { style: { fontSize:10, color:C.muted }}, "AI 3D Layout Designer"   )
-          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · resolver fix + sink-on-base"   )
+          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · windows carve cabinets + full-wall read"   )
         )
         , phase==="result" && React.createElement(React.Fragment, null
           , React.createElement('div', { style: { marginLeft:"auto", display:"flex", background:"#1f1f1f", border:`1px solid ${C.border}`, borderRadius:7, padding:3, gap:2, width:340 }}
