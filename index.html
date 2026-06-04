@@ -149,59 +149,53 @@ function normalizeWalls(parsed) {
   return parsed;
 }
 
-// Carve gaps in base/upper cabinet runs where a full appliance sits, so a
-// cabinet body never renders through the stove / fridge / dishwasher.
-function _cutsBody(t){ return t==='fridge'||t==='stove'||t==='dishwasher'; }
-// Stove carves the upper run (OTR microwave / hood lives there). The fridge does
-// NOT carve uppers: a cabinet overlapping the fridge on the plan is the cabinet
-// ABOVE the fridge, so it is kept.
-function _cutsUpper(t){ return t==='stove'; }
-function _splitInterval(start, len, cuts){
-  let segs=[[start, start+len]];
-  cuts.forEach(c=>{ const cs=c[0],ce=c[1]; const next=[];
-    segs.forEach(s=>{ const a=s[0],b=s[1];
-      if(ce<=a||cs>=b){ next.push([a,b]); return; }
-      if(cs>a) next.push([a, Math.max(a,cs)]);
-      if(ce<b) next.push([Math.min(b,ce), b]);
-    }); segs=next; });
-  return segs.filter(s=>s[1]-s[0]>0.3).map(s=>[s[0], s[1]-s[0]]);
+// Carve gaps in base/upper cabinet runs where a full appliance sits, and lift the
+// cabinet that sits ABOVE the fridge so it rests on top instead of clipping through.
+function _edgesWithin(s, e, intervals){
+  const pts=[s,e];
+  intervals.forEach(iv=>{ if(iv[0]>s+0.001 && iv[0]<e-0.001) pts.push(iv[0]); if(iv[1]>s+0.001 && iv[1]<e-0.001) pts.push(iv[1]); });
+  return Array.from(new Set(pts)).sort((a,b)=>a-b);
 }
+function _inAny(m, intervals){ return intervals.some(iv => m>iv[0] && m<iv[1]); }
 function splitCabinetsAroundAppliances(cabinets, appliances, RW, RH){
-  const out=[];
+  const RHv = RH || 9;
+  const apps = appliances || [];
+  const out = [];
   (cabinets||[]).forEach(c=>{
     if(c.type!=='base' && c.type!=='upper'){ out.push(c); return; } // islands/pantry pass through (same ref)
     const onBack = c.z < 0.7;
     const onLeft = !onBack && c.x < 0.7 && c.depth >= c.width;
     const onRight= !onBack && !onLeft && (c.x + c.width > RW - 0.7) && c.depth >= c.width;
-    const cutter = c.type==='upper' ? _cutsUpper : _cutsBody;
-    const rel = (appliances||[]).filter(a => cutter(a.type));
-    if(onBack){
-      const cuts = rel.filter(a => a.z < 0.9).map(a => [a.x, a.x + a.width]);
-      const segs = _splitInterval(c.x, c.width, cuts);
-      if(segs.length===1 && Math.abs(segs[0][0]-c.x)<0.01 && Math.abs(segs[0][1]-c.width)<0.01){ out.push(c); return; }
-      segs.forEach(s => out.push(Object.assign({}, c, { x:s[0], width:s[1] })));
-    } else if(onLeft || onRight){
-      const cuts = rel.filter(a => onLeft ? a.x < 0.9 : (a.x + a.width > RW - 0.9)).map(a => [a.z, a.z + a.depth]);
-      const segs = _splitInterval(c.z, c.depth, cuts);
-      if(segs.length===1 && Math.abs(segs[0][0]-c.z)<0.01 && Math.abs(segs[0][1]-c.depth)<0.01){ out.push(c); return; }
-      segs.forEach(s => out.push(Object.assign({}, c, { z:s[0], depth:s[1] })));
-    } else { out.push(c); }
+    if(!onBack && !onLeft && !onRight){ out.push(c); return; }
+    const axisOf = a => onBack ? [a.x, a.x + a.width] : [a.z, a.z + (a.depth||2)];
+    const onWall = a => onBack ? (a.z < 0.9) : (onLeft ? a.x < 0.9 : (a.x + a.width > RW - 0.9));
+    const stoveIv  = apps.filter(a => a.type==='stove'      && onWall(a)).map(axisOf);
+    const dwIv     = apps.filter(a => a.type==='dishwasher' && onWall(a)).map(axisOf);
+    const fridgeIv = apps.filter(a => a.type==='fridge'     && onWall(a)).map(axisOf);
+    const fridges  = apps.filter(a => a.type==='fridge'     && onWall(a));
+    // Base runs are carved around stove/fridge/dishwasher. Upper runs are carved
+    // around the stove (microwave/hood) but KEPT over the fridge — and lifted.
+    const removeIv = c.type==='upper' ? stoveIv : stoveIv.concat(fridgeIv, dwIv);
+    const liftIv   = c.type==='upper' ? fridgeIv : [];
+    const s   = onBack ? c.x : c.z;
+    const len = onBack ? c.width : c.depth;
+    const e   = s + len;
+    const pts = _edgesWithin(s, e, removeIv.concat(liftIv));
+    if(pts.length===2 && !_inAny((s+e)/2, removeIv) && !_inAny((s+e)/2, liftIv)){ out.push(c); return; }
+    for(let k=0;k<pts.length-1;k++){
+      const a=pts[k], b=pts[k+1]; if(b-a < 0.3) continue;
+      const m=(a+b)/2;
+      if(_inAny(m, removeIv)) continue;
+      const piece = Object.assign({}, c);
+      if(onBack){ piece.x=a; piece.width=b-a; } else { piece.z=a; piece.depth=b-a; }
+      if(_inAny(m, liftIv)){
+        const f = fridges[0] || { height:6.5 };
+        piece.wallHeight = Math.min(Math.max(c.wallHeight || 4.5, (f.height || 6.5) + 0.1), RHv - 0.8);
+      }
+      out.push(piece);
+    }
   });
-  // An upper that overlaps the fridge is the cabinet ABOVE it — lift it so it sits
-  // on top of the fridge instead of clipping through it. Clone so stored data is untouched.
-  const RHv = RH || 9;
-  const fridges = (appliances||[]).filter(a => a.type === 'fridge');
-  if(!fridges.length) return out;
-  return out.map(c => {
-    if(c.type !== 'upper') return c;
-    const onBackC = c.z < 0.7;
-    const f = fridges.find(f => onBackC
-      ? (f.z < 0.9 && c.x < f.x + f.width && c.x + c.width > f.x)
-      : (c.z < f.z + (f.depth||2) && c.z + c.depth > f.z));
-    if(!f) return c;
-    const lift = Math.min(Math.max(c.wallHeight || 4.5, (f.height || 6.5) + 0.1), RHv - 0.8);
-    return Object.assign({}, c, { wallHeight: lift });
-  });
+  return out;
 }
 
 const DEMO = {
@@ -1938,6 +1932,30 @@ function App() {
         return; // handled in the island block so it moves with the island
       }
 
+      // ── WALL SINK: basin set into the counter + faucet (no floating box). ──
+      // The base cabinet beneath it (never carved away for a sink) provides the
+      // body and countertop, so we only draw the basin and tap on top.
+      if (app.type === "sink") {
+        const ctY = (app.height || 3) + 0.045;            // base countertop surface
+        const cx  = app.x + app.width/2;
+        const cz  = app.z + (app.depth||2)/2;
+        const bw  = app.width * 0.6, bd = (app.depth||2) * 0.5;
+        // stainless rim flush with the counter
+        const rim = new THREE.Mesh(new THREE.BoxGeometry(bw+0.07, 0.03, bd+0.07), new THREE.MeshLambertMaterial({ color:0xb8bcc0 }));
+        rim.position.set(cx, ctY+0.05, cz); appGroup.add(rim);
+        // basin recess sunk just below the counter
+        const basin = new THREE.Mesh(new THREE.BoxGeometry(bw, 0.18, bd), new THREE.MeshLambertMaterial({ color:0x3a3e42 }));
+        basin.position.set(cx, ctY-0.04, cz); appGroup.add(basin);
+        // faucet base + spout, set toward the back of the counter
+        const fz = app.z + (app.depth||2) * 0.22;
+        const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.05,0.16,10), new THREE.MeshLambertMaterial({ color:0xc4c8cc }));
+        faucetBase.position.set(cx, ctY+0.13, fz); appGroup.add(faucetBase);
+        const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.028,0.028,(app.depth||2)*0.3,10), new THREE.MeshLambertMaterial({ color:0xc4c8cc }));
+        spout.rotation.x = Math.PI / 2.3;
+        spout.position.set(cx, ctY+0.34, app.z + (app.depth||2) * 0.36); appGroup.add(spout);
+        return;
+      }
+
       // ── HOOD FAN: pyramid chimney ────────────────────────────────────
       if (app.type === "hood_fan") {
         const cx=app.x+app.width/2, cz=app.z+app.depth/2;
@@ -2000,15 +2018,6 @@ function App() {
       if (app.type==="fridge") {
         const h = new THREE.Mesh(new THREE.BoxGeometry(0.05,0.55,0.07), new THREE.MeshLambertMaterial({ color:0x1a1a1a }));
         h.position.set(app.x+app.width/2+app.width*0.34, app.height*0.62, app.z+app.depth+0.04); appGroup.add(h);
-      }
-      if (app.type==="sink") {
-        const basin = new THREE.Mesh(new THREE.BoxGeometry(app.width*0.62,0.14,app.depth*0.55), new THREE.MeshLambertMaterial({ color:0x424242 }));
-        basin.position.set(app.x+app.width/2, app.height-0.06, app.z+app.depth/2); appGroup.add(basin);
-        const faucet = new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.035,0.5,8), new THREE.MeshLambertMaterial({ color:0xc0c0c0 }));
-        faucet.position.set(app.x+app.width/2, app.height+0.25, app.z+app.depth*0.22); appGroup.add(faucet);
-        const spout = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.025,app.depth*0.25,8), new THREE.MeshLambertMaterial({ color:0xc0c0c0 }));
-        spout.rotation.x=Math.PI/2;
-        spout.position.set(app.x+app.width/2, app.height+0.48, app.z+app.depth*0.34); appGroup.add(spout);
       }
     });
   }, [result, layoutIdx]);
@@ -2175,8 +2184,9 @@ function App() {
         "- EXACTLY ONE of each appliance type per layout.\n\n" +
 
         "STEP 4 — FIND WINDOWS\n" +
-        "Only add windows actually visible in the photo/drawing. If no window is visible, return windows:[].\n" +
-        "Never invent a window.\n\n" +
+        "Only add windows actually visible in the photo/drawing (often shown above the sink, or as a gap/break in a wall run). If none are visible, return windows:[]. Never invent a window.\n" +
+        "Describe each window the SAME way as cabinets — by wall and position:\n" +
+        "{\"wall\":\"back|left|right\", \"offset\":<feet from that wall's start corner; back = from left, sides = from back>, \"width\":<feet>, \"from_floor\":<feet from floor to the windowsill, ~3.5 when above a counter>, \"height\":<feet, ~3.5 typical>}\n\n" +
 
         "Return ONLY this JSON:\n" +
         "{\n" +
@@ -2482,7 +2492,7 @@ function App() {
         , React.createElement('div', {}
           , React.createElement('div', { style: { fontSize:12, fontWeight:800, color:C.gold, letterSpacing:2, fontFamily:"Outfit,sans-serif" }}, "QUARTZ CITY RENO"  )
           , React.createElement('div', { style: { fontSize:10, color:C.muted }}, "AI 3D Layout Designer"   )
-          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-02 · browser-access fix"   )
+          , React.createElement('div', { style: { fontSize:8, color:C.gold, fontFamily:"DM Mono,monospace", letterSpacing:1, opacity:0.7 }}, "build 2026-06-04 · fridge+sink+window fixes"   )
         )
         , phase==="result" && React.createElement(React.Fragment, null
           , React.createElement('div', { style: { marginLeft:"auto", display:"flex", background:"#1f1f1f", border:`1px solid ${C.border}`, borderRadius:7, padding:3, gap:2, width:340 }}
