@@ -63,6 +63,43 @@
   #redoNotes{width:100%;background:#16181c;border:1px solid var(--line);border-radius:8px;color:var(--ink);
     font-size:13px;padding:11px 13px;font-family:inherit;line-height:1.5;resize:vertical}
   #redoNotes:focus{outline:none;border-color:var(--gold)}
+  .cmp{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+  .cmpbox{flex:1 1 360px;min-width:300px;display:flex;flex-direction:column;gap:10px}
+  .cmp figure{margin:0;background:#16181c;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .cmp figcaption{padding:7px 11px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);
+    background:#1c1f24;border-bottom:1px solid var(--line)}
+  .cmp img{display:block;width:100%;height:auto;background:#fff}
+  #redo3dHost{position:relative;width:100%;height:260px;background:#aab3bc}
+  #redo3dHost canvas{display:block;border-radius:0 0 10px 10px}
+  .schedwrap{margin-bottom:18px}
+  .schedttl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin:0 0 8px}
+  .schedttl span{color:var(--muted);letter-spacing:.04em;text-transform:none}
+  .schedlist{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow:auto;padding-right:4px}
+  .srow{display:flex;align-items:center;gap:10px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;
+    background:rgba(255,255,255,.02);cursor:pointer;transition:.12s}
+  .srow:hover{border-color:rgba(197,165,114,.5)}
+  .srow.active{border-color:var(--gold);background:rgba(197,165,114,.12)}
+  .srow .sinfo{flex:1;min-width:0}
+  .srow .scode{font-size:12px;font-weight:700;color:var(--ink)}
+  .srow .smeta{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .srow .splus{flex:none;width:26px;height:26px;border-radius:6px;border:1px solid rgba(197,165,114,.4);
+    background:transparent;color:var(--gold);font-size:16px;line-height:1;cursor:pointer}
+  .srow .splus:hover{background:var(--gold);color:var(--char)}
+  .schedwrap{max-width:940px;margin:0 auto}
+  .schedwrap .schedttl{text-align:center}
+  #redoSched{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:5px;margin:0 auto;max-height:34vh;overflow-y:auto;overflow-x:hidden;padding:2px}
+  #redoSched .srow{padding:6px 9px;gap:7px}
+  #redoSched .scode{font-size:11px}
+  #redoSched .smeta{font-size:10px}
+  #redoSched .splus{width:22px;height:22px;font-size:14px}
+  .drawhead{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px}
+  .drawdl{display:flex;align-items:center;gap:14px}
+  .dlopt{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);cursor:pointer}
+  .dlopt input{accent-color:var(--gold)}
+  .drawgrid{display:flex;gap:22px;align-items:flex-start;flex-wrap:wrap}
+  .drawmain{flex:1 1 480px;min-width:300px}
+  .drawside{flex:0 0 290px;width:290px;position:sticky;top:8px}
+  @media(max-width:820px){.drawside{flex-basis:100%;width:100%;position:static}}
   /* 3d controls overlay */
   .ctl{position:absolute;top:14px;right:14px;width:230px;background:rgba(39,43,49,.92);backdrop-filter:blur(8px);
     border:1px solid rgba(197,165,114,.25);border-radius:11px;z-index:5;overflow:hidden}
@@ -85,6 +122,7 @@
   .toggle input:checked::after{left:18px}
   /* scrolly views */
   .scroll{position:absolute;inset:0;overflow:auto;padding:22px}
+  .wrap{max-width:1120px;margin:0 auto;width:100%}
   .pagettl{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin:0 0 14px}
   table{width:100%;border-collapse:collapse;font-size:12px}
   th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line)}
@@ -99,6 +137,17 @@
   .elevttl{font-size:12px;color:var(--ink);margin:0 0 6px;letter-spacing:.06em}
   .reset{position:absolute;left:14px;bottom:14px;z-index:5}
   .hint{position:absolute;left:14px;bottom:14px;font-size:10px;color:var(--muted);background:rgba(20,22,25,.7);padding:6px 10px;border-radius:7px;z-index:4}
+  .hint b{color:var(--gold)}
+  .isle{position:absolute;left:14px;top:66px;width:212px;z-index:6;background:rgba(39,43,49,.95);
+    backdrop-filter:blur(8px);border:1px solid rgba(197,165,114,.35);border-radius:11px;padding:10px 12px;display:none}
+  .isle.show{display:block}
+  .islehd{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:.22em;
+    color:var(--gold);font-weight:700;text-transform:uppercase;margin-bottom:8px}
+  .islehd .x{cursor:pointer;font-size:16px;color:var(--muted)}.islehd .x:hover{color:#fff}
+  .isler{display:flex;align-items:center;gap:8px;font-size:11px;color:#e9e6df;margin:5px 0}
+  .isler span{width:42px;color:var(--muted)}
+  .isler b{width:36px;text-align:right;font-weight:600}
+  .isler input[type=range]{flex:1;accent-color:var(--gold)}
 </style>
 </head>
 <body>
@@ -110,9 +159,8 @@
     <div class="tabs" id="tabs">
       <div class="tab on" data-t="start">Upload</div>
       <div class="tab dis" data-t="m3d">3D Model</div>
-      <div class="tab dis" data-t="plan">Floor Plan</div>
+      <div class="tab dis" data-t="plan">Drawing</div>
       <div class="tab dis" data-t="elev">2D Elevation</div>
-      <div class="tab dis" data-t="sched">Schedule</div>
       <div class="tab dis" data-t="redo">Re-analyze</div>
     </div>
   </header>
@@ -155,40 +203,75 @@
         <div class="g"><div class="l">View</div><div class="r" id="viewRow">
           <div class="chip" data-v="corner">Corner</div><div class="chip" data-v="eye">Eye</div>
           <div class="chip" data-v="top">Top</div></div></div>
+        <div class="g"><div class="l">Add-on (drag to move)</div><div class="r" id="addRow">
+          <div class="chip" data-add="island">+ Island</div>
+          <div class="chip" data-add="peninsula">+ Peninsula</div></div></div>
         <div class="g">
           <label class="toggle">Wall cabinets <input type="checkbox" id="tUp" checked></label>
           <label class="toggle">Labels <input type="checkbox" id="tLab"></label>
+          <label class="toggle">Snap add-ons <input type="checkbox" id="tSnap" checked></label>
           <label class="toggle">Auto-rotate <input type="checkbox" id="tSpin"></label></div>
         </div>
       </div>
-      <div class="hint">Drag orbit · Scroll zoom · Right-drag pan</div>
+      <div class="hint">Drag orbit · Scroll zoom · Right-drag pan · Click an add-on to move/resize it</div>
+      <div class="isle" id="islePanel">
+        <div class="islehd"><span id="isleTitle">Add-on</span><span class="x" id="isleClose">×</span></div>
+        <div class="isler"><span>Width</span><input type="range" id="isleW" min="24" max="140" step="1"><b id="isleWv"></b></div>
+        <div class="isler"><span>Depth</span><input type="range" id="isleD" min="18" max="60" step="1"><b id="isleDv"></b></div>
+        <div class="isler"><span>Rotate</span><input type="range" id="isleR" min="0" max="360" step="5"><b id="isleRv"></b></div>
+        <div class="isler"><span>Stools</span><input type="range" id="isleS" min="0" max="8" step="1"><b id="isleSv"></b></div>
+        <label class="toggle" style="padding:4px 0">Sink <input type="checkbox" id="isleSink"></label>
+        <button class="btn ghost" id="isleReset" style="width:100%;margin-top:8px">Reset to original size</button>
+        <button class="btn" id="isleDelete" style="width:100%;margin-top:6px;background:#7a3a3a;color:#fff">Delete add-on</button>
+      </div>
     </section>
-    <!-- FLOOR PLAN (+ source drawings) -->
-    <section class="view" id="v-plan"><div class="scroll"><h2 class="pagettl">Floor Plan</h2>
-      <canvas class="plan" id="planCanvas"></canvas>
-      <h2 class="pagettl" style="margin-top:28px">Source Drawing(s)</h2>
-      <div class="draws" id="draws"></div></div></section>
-    <!-- SCHEDULE -->
-    <section class="view" id="v-sched"><div class="scroll"><h2 class="pagettl">Cabinet &amp; Appliance Schedule</h2>
-      <table id="schedTable"><thead><tr><th>#</th><th>Code</th><th>Type</th><th>Wall</th><th>Pos (in)</th><th>W×H×D</th></tr></thead>
-      <tbody id="schedBody"></tbody></table></div></section>
+    <!-- DRAWING (plan + measurements + schedule) -->
+    <section class="view" id="v-plan"><div class="scroll"><div class="wrap">
+      <div class="drawhead">
+        <h2 class="pagettl" style="margin:0">Drawing</h2>
+        <div class="drawdl">
+          <label class="dlopt"><input type="checkbox" id="pdfSched" checked> Include schedule measurements</label>
+          <button class="btn ghost" id="dlPdf">Download PDF</button>
+        </div>
+      </div>
+      <div class="drawgrid">
+        <div class="drawmain">
+          <canvas class="plan" id="planCanvas"></canvas>
+          <h2 class="pagettl" style="margin-top:26px">Source drawing(s)</h2>
+          <div class="draws" id="draws"></div>
+        </div>
+        <aside class="drawside">
+          <div class="schedttl">Schedule <span>· hover to measure</span></div>
+          <div id="planSched" class="schedlist" style="max-height:calc(100vh - 230px)"></div>
+        </aside>
+      </div>
+    </div></div></section>
     <!-- ELEVATION -->
-    <section class="view" id="v-elev"><div class="scroll"><h2 class="pagettl">2D Elevations</h2>
-      <div id="elevWrap"></div></div></section>
+    <section class="view" id="v-elev"><div class="scroll"><div class="wrap"><h2 class="pagettl">2D Elevations</h2>
+      <div id="elevWrap"></div></div></div></section>
     <!-- RE-ANALYZE -->
-    <section class="view" id="v-redo"><div class="scroll" style="max-width:660px">
+    <section class="view" id="v-redo"><div class="scroll"><div class="wrap" style="max-width:1000px">
       <h2 class="pagettl">Re-analyze</h2>
-      <p style="color:var(--muted);font-size:13px;line-height:1.65;margin:0 0 14px">
-        Not happy with the result? Describe what to fix or add — be specific about which wall, counts,
-        overlaps, or missing pieces — and the AI re-reads the same drawing with your notes in mind.</p>
-      <textarea id="redoNotes" rows="6" placeholder="e.g. Left wall has too many lower cabinets — remove the extras. The fridge is overlapping the back-wall cabinets; give it its own slot. Add the upper cabinet above the fridge. There is an island with a sink in the middle that's missing."></textarea>
+      <p style="color:var(--muted);font-size:13px;line-height:1.6;margin:0 0 14px">
+        Compare the model with your drawing. Hover a schedule row to highlight that unit on the model;
+        press <b style="color:var(--gold)">+</b> to add it to your notes. Then describe what to fix and re-analyze.</p>
+      <div class="cmp">
+        <figure class="cmpbox"><figcaption>Generated 3D model — drag to rotate</figcaption><div id="redo3dHost"></div></figure>
+        <div class="cmpbox" id="redoDraws"></div>
+      </div>
+      <div class="schedwrap">
+        <div class="schedttl">Schedule <span>· hover to preview · click to pin · + to reference</span></div>
+        <div id="redoSched" class="schedlist"></div>
+      </div>
+      <textarea id="redoNotes" rows="5" placeholder="Describe what to fix. e.g. The fridge overlaps the back-wall cabinets — give it its own slot. The upper above the fridge is missing. There's a center island with a sink that's missing."></textarea>
       <div style="margin-top:12px"><button class="btn" id="redoBtn">Re-analyze drawing</button></div>
       <div id="redoStatus" style="margin-top:12px;font-size:12px;color:var(--gold);min-height:18px"></div>
-    </div></section>
+    </div></div></section>
   </main>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 (function(){
 "use strict";
@@ -204,12 +287,12 @@ const SYS=[
 "3) OVER-FRIDGE CABINET: if a cabinet is drawn above the fridge, include it as an upper at the SAME x as the fridge with kind 'wall', bottom about 72, h about 12-15, and d about 24 (deeper than a normal 12-inch upper). Do not omit it.",
 "4) ISLANDS: a rectangle drawn AWAY from the walls (free-standing, not against a wall) is an ISLAND or peninsula — output it in islands[], never as a wall. If a sink or cooktop is drawn on the island, set \"sink\":true (or \"appliance\"). Codes like SB / HSI / ISB indicate a sink. Do not miss a center island.",
 "5) Tall units (REF refrigerator, TP tall pantry/utility, oven towers) run floor-to-ceiling and have no countertop on top.",
-"6) CORNERS: at an inside corner where two walls meet there is usually ONE corner cabinet — codes like BC, BCFD, CFD, EC, LS (lazy susan), BD/BLIND, or a unit drawn diagonally across the corner; wall corner = WC/WEC. Mark it kind:'corner'. Put the corner cabinet on ONE wall only, as the unit nearest the junction (so it is the last unit of one wall, at the highest x, or the first unit of the other). Then START the adjoining wall's first regular cabinet about 24in away from the corner so the two runs do NOT both fill the corner. Never place a corner cabinet on both walls.",
+"6) CORNERS: where two walls meet at an inside corner, run BOTH walls' cabinets all the way into the corner so the corner-most cabinet of one wall touches the corner-most cabinet of the other wall — no gap at the corner. The corner-most unit may be labeled BC, BCFD, CFD, EC, LS (lazy susan), BD/BLIND, WC/WEC; give it kind:'corner' (it is otherwise a normal cabinet). Do not leave the corner empty.",
 "NOMENCLATURE: W=wall(upper) cabinet, B=base, DB=drawer base, FD/FDB=finished/full-height drawer base, SB=sink base, SFDB=sink front drawer base, ISB/HSI=island sink base, TP=tall pantry/utility, REF=refrigerator, RANGE=range/stove, DW=dishwasher, BC/BCFD/CFD/EC=base corner, WC/WEC=wall corner, LS=lazy susan, BD/BLIND=blind corner, MW=microwave cabinet, VAL=valance/light-rail, WEP/BEP/EP/BED=end panel, FDI/FI=filler, BT=base specialty. A 6-digit code is WIDTH-HEIGHT-DEPTH in inches; a trailing L or R is the door hinge. A VAL (valance) with no cabinet box usually means a WINDOW above the counter there.",
 "DIMENSIONS: Use the printed dimension chains for widths and x-positions; estimate only when a value is unreadable so the wall units sum to the wall length.",
 "OUTPUT: Return ONLY minified JSON (no prose, no markdown fences). Schema:",
 '{"units":"in","room":{"width":N,"depth":N},"walls":[{"id":"back|right|left|front","label":"","length":N,"base":[{"code":"","kind":"base|drawer|appliance|sink|filler|corner","appliance":"fridge|range|hood|dishwasher|oven|microwave|null","x":N,"w":N,"h":N,"d":N,"drawers":true}],"upper":[{"code":"","kind":"wall|valance|hood|corner|microwave","x":N,"w":N,"h":N,"bottom":N}],"windows":[{"x":N,"w":N,"sill":N,"head":N}]}],"islands":[{"code":"","label":"","attachedTo":"right|left|back|front|null","x":N,"z":N,"w":N,"d":N,"stools":N,"sink":false,"appliance":"sink|cooktop|null"}]}',
-"COORDINATES: x = inches from that wall's start corner. The 'back' wall runs along the top; the 'right' wall runs down the right side with x measured from the back-right corner. Put appliances in the base array with kind:'appliance' and the appliance field set. Keep codes short. Return ONLY the JSON object."
+"COORDINATES: x = inches from that wall's start corner. The 'back' wall runs left-to-right along the top (x from the left). The 'right' wall runs down the right side (x from the back-right corner toward the front). The 'left' wall runs down the left side (x from the back-LEFT corner, where it meets the back wall, toward the front). The 'front' wall runs along the bottom (x from the left). Put appliances in the base array with kind:'appliance' and the appliance field set. Keep codes short. Return ONLY the JSON object."
 ].join(" ");
 const USERTXT="Analyze this kitchen and return the JSON layout using the method and accuracy rules described. Double-check there are no overlapping units and no invented cabinets before answering.";
 
@@ -276,22 +359,54 @@ tabs.addEventListener('click',function(e){const t=e.target.closest('.tab');if(!t
   [].forEach.call(tabs.children,function(x){x.classList.remove('on');});t.classList.add('on');
   [].forEach.call(document.querySelectorAll('.view'),function(v){v.classList.remove('on');});
   document.getElementById('v-'+t.dataset.t).classList.add('on');
-  if(t.dataset.t==='m3d'){onResize3D();}});
+  onTab(t.dataset.t);});
+function mountCanvas(hostId){if(!renderer)return;var host=document.getElementById(hostId);
+  if(host&&renderer.domElement.parentElement!==host)host.appendChild(renderer.domElement);}
+function onTab(id){
+  if(id==='redo'){mountCanvas('redo3dHost');populateRedoDraws();buildRedoSchedule();onResize3D();}
+  else if(id==='m3d'){mountCanvas('app3d');clearHighlight();onResize3D();}
+  else if(id==='plan'){mountCanvas('app3d');clearHighlight();if(layout){drawFloorPlan(layout);buildPlanSchedule();}}
+  else {mountCanvas('app3d');clearHighlight();}
+}
+function populateRedoDraws(){var w=document.getElementById('redoDraws');w.innerHTML='';var any=false;
+  images.forEach(function(im,i){if(!im)return;any=true;var f=document.createElement('figure');
+    f.innerHTML='<figcaption>Your drawing '+(i+1)+'</figcaption><img src="'+im.url+'">';w.appendChild(f);});
+  if(!any)w.innerHTML='<figure><figcaption>Your drawing</figcaption><div style="padding:22px;color:var(--muted);font-size:12px;background:#16181c">No source image uploaded (demo layout).</div></figure>';}
 function enableTabs(){[].forEach.call(tabs.children,function(x){x.classList.remove('dis');});}
 function gotoTab(id){[].forEach.call(tabs.children,function(x){x.classList.toggle('on',x.dataset.t===id);});
   [].forEach.call(document.querySelectorAll('.view'),function(v){v.classList.remove('on');});
-  document.getElementById('v-'+id).classList.add('on');if(id==='m3d')onResize3D();}
+  document.getElementById('v-'+id).classList.add('on');onTab(id);}
 
 /* =================== analyze =================== */
 const statusEl=document.getElementById('status');
 document.getElementById('demo').onclick=function(){statusEl.textContent='';loadLayout(DEMO);};
 
+function tryParse(t){try{return JSON.parse(t);}catch(e){return undefined;}}
+function repairJSON(t){
+  var stack=[],inStr=false,esc=false;
+  for(var i=0;i<t.length;i++){var ch=t[i];
+    if(inStr){if(esc)esc=false;else if(ch==='\\')esc=true;else if(ch==='"')inStr=false;continue;}
+    if(ch==='"'){inStr=true;continue;}
+    if(ch==='{'||ch==='[')stack.push(ch==='{'?'}':']');
+    else if(ch==='}'||ch===']')stack.pop();}
+  var fix=t;if(inStr)fix+='"';fix=fix.replace(/,\s*$/,'');
+  for(var j=stack.length-1;j>=0;j--)fix+=stack[j];
+  return fix;
+}
+function parseLoose(txt){
+  var p=tryParse(txt);if(p)return p;
+  p=tryParse(repairJSON(txt));if(p)return p;
+  for(var i=txt.length-1;i>0;i--){if(txt[i]==='}'||txt[i]===']'){
+    var q=tryParse(repairJSON(txt.slice(0,i+1)));if(q)return q;}}
+  throw new Error('Could not read the layout from the response (it may have been cut off — try again or use a clearer/smaller image).');
+}
 function parseModelJSON(data){
   let txt=(data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('\n');
   if(!txt && data.error)throw new Error('API: '+(data.error.message||data.error.type||'error'));
   txt=txt.replace(/```json/gi,'').replace(/```/g,'').trim();
-  const first=txt.indexOf('{'),last=txt.lastIndexOf('}');if(first>=0)txt=txt.slice(first,last+1);
-  return JSON.parse(txt);
+  const first=txt.indexOf('{'),last=txt.lastIndexOf('}');
+  if(first>=0&&last>first)txt=txt.slice(first,last+1);else if(first>=0)txt=txt.slice(first);
+  return parseLoose(txt);
 }
 
 async function runAnalysis(feedback, statEl, btn){
@@ -308,7 +423,7 @@ async function runAnalysis(feedback, statEl, btn){
   }
   content.push({type:'text',text:txt});
   const model=(document.getElementById('modelSel')&&document.getElementById('modelSel').value)||'claude-sonnet-4-6';
-  const body=JSON.stringify({model:model,max_tokens:4096,system:SYS,messages:[{role:'user',content:content}]});
+  const body=JSON.stringify({model:model,max_tokens:8192,system:SYS,messages:[{role:'user',content:content}]});
   const key=(document.getElementById('apiKey').value||'').trim();
   const headers=key?{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'}
                    :{'Content-Type':'application/json'};
@@ -340,7 +455,7 @@ function loadLayout(json){
   drawProfile=null;
   build3D(layout);
   drawFloorPlan(layout);
-  buildSchedule(layout);
+  buildPlanSchedule();
   drawElevations(layout);
   showDrawings();
   enableTabs();gotoTab('m3d');
@@ -354,10 +469,24 @@ function deoverlap(arr){ /* tile units edge-to-edge in x order so nothing overla
     cursor=(u.x||0)+u.w;}
   return arr;
 }
+/* Make adjoining walls meet at each inside corner: extend the corner-most cabinet of
+   each wall so it reaches the corner, so one wall's cabinet touches the other's with no gap. */
+function closeCorners(j){
+  var ids={};j.walls.forEach(function(w){ids[w.id]=w;});
+  function far(id){return (id==='back'||id==='front')?(j.room.width||240):(j.room.depth||160);}
+  function toStart(w){if(!w)return;[w.base,w.upper].forEach(function(a){if(!a||!a.length)return;
+    var m=a[0];a.forEach(function(u){if((u.x||0)<(m.x||0))m=u;});var r=(m.x||0)+(m.w||24);m.x=0;m.w=r;});}
+  function toEnd(w){if(!w)return;var F=far(w.id);[w.base,w.upper].forEach(function(a){if(!a||!a.length)return;
+    var m=a[0];a.forEach(function(u){if(((u.x||0)+(u.w||24))>((m.x||0)+(m.w||24)))m=u;});m.w=Math.max(m.w||24,F-(m.x||0));});}
+  if(ids.back&&ids.left){toStart(ids.back);toStart(ids.left);}
+  if(ids.back&&ids.right){toEnd(ids.back);toStart(ids.right);}
+  if(ids.left&&ids.front){toEnd(ids.left);toStart(ids.front);}
+  if(ids.right&&ids.front){toEnd(ids.right);toEnd(ids.front);}
+}
 function normalize(j){j=j||{};j.room=j.room||{width:240,depth:160};
   j.walls=(j.walls||[]).map(function(w){w.base=w.base||[];w.upper=w.upper||[];w.windows=w.windows||[];
     deoverlap(w.base);return w;});
-  j.islands=j.islands||[];return j;}
+  j.islands=j.islands||[];closeCorners(j);return j;}
 
 /* =================== drawings tab =================== */
 function showDrawings(){const wrap=document.getElementById('draws');wrap.innerHTML='';
@@ -386,28 +515,50 @@ function buildSchedule(L){const body=document.getElementById('schedBody');body.i
 }
 function lighten(hex){return hex.replace('#','#');}
 
-/* =================== floor plan tab =================== */
-function drawFloorPlan(L){
+/* =================== drawing (floor plan) tab =================== */
+function drawFloorPlan(L,hover){
   const cv=document.getElementById('planCanvas');const W=L.room.width,D=L.room.depth;
-  const pad=46,maxW=Math.min(940,(window.innerWidth||1000)-90);
-  const scale=Math.min((maxW-pad*2)/W,(620-pad*2)/D);
+  const host=cv.parentElement;const avail=(host&&host.clientWidth>60)?host.clientWidth:Math.min(820,(window.innerWidth||1000)-360);
+  const pad=58,maxW=Math.max(280,Math.min(880,avail));
+  const scale=Math.min((maxW-pad*2)/W,(660-pad*2)/D);
   cv.width=W*scale+pad*2;cv.height=D*scale+pad*2;
   const c=cv.getContext('2d');c.clearRect(0,0,cv.width,cv.height);
   function PX(x){return pad+x*scale;}function PY(z){return pad+z*scale;}
   /* walls */
   c.strokeStyle='#c5a572';c.lineWidth=3;c.strokeRect(PX(0),PY(0),W*scale,D*scale);
-  c.fillStyle='#9aa0a8';c.font='10px Helvetica';c.textAlign='center';
   /* units */
   L.walls.forEach(function(w){
     w.base.forEach(function(u){const r=planRect(w,u,W,D,24,u.d);drawCell(c,r,scale,PX,PY,u.code,cellColor(u.appliance?'appliance':u.kind));});
   });
   L.islands.forEach(function(is){const r={x:is.x,z:is.z,w:is.w,d:is.d};drawCell(c,r,scale,PX,PY,is.code,'#8a5a9a');
-    /* stools */ if(is.stools){c.fillStyle='#c5a572';for(let i=0;i<is.stools;i++){const sx=is.x+is.w*(i+1)/(is.stools+1),sz=is.z+is.d+8;c.beginPath();c.arc(PX(sx),PY(sz),5,0,7);c.fill();}}});
-  /* windows as thick gold segments on wall */
+    if(is.stools){c.fillStyle='#c5a572';for(let i=0;i<is.stools;i++){const sx=is.x+is.w*(i+1)/(is.stools+1),sz=is.z+is.d+8;c.beginPath();c.arc(PX(sx),PY(sz),5,0,7);c.fill();}}});
+  /* windows */
   c.strokeStyle='#7fb8d8';c.lineWidth=5;
   L.walls.forEach(function(w){w.windows.forEach(function(win){const seg=winSeg(w,win,W,D);
     c.beginPath();c.moveTo(PX(seg.x1),PY(seg.z1));c.lineTo(PX(seg.x2),PY(seg.z2));c.stroke();});});
+  /* general overall dimensions */
+  dimH(c,PX(0),PX(W),PY(0)-26,W+'"');
+  dimV(c,PY(0),PY(D),PX(0)-26,D+'"');
+  /* hovered element measurement */
+  if(hover){var r2=entryRect(hover,W,D);if(r2){
+    c.save();c.strokeStyle='#ffcf66';c.lineWidth=2.5;c.strokeRect(PX(r2.x),PY(r2.z),r2.w*scale,r2.d*scale);c.restore();
+    var horiz=(hover.island)?true:(hover.wall.id==='back'||hover.wall.id==='front');
+    if(horiz)dimH(c,PX(r2.x),PX(r2.x+r2.w),PY(r2.z+r2.d)+24,(hover.island?r2.w:hover.unit.w)+'"',true);
+    else dimV(c,PY(r2.z),PY(r2.z+r2.d),PX(r2.x+r2.w)+24,hover.unit.w+'"',true);}}
 }
+function entryRect(en,W,D){
+  if(en.win){return planRect(en.wall,en.unit,W,D,4,4);}
+  if(en.island){var is=en.island;return{x:is.x,z:is.z,w:is.w,d:is.d};}
+  if(en.unit&&en.wall){return planRect(en.wall,en.unit,W,D,24,en.unit.d);}
+  return null;
+}
+/* dimension lines */
+function dimH(c,x1,x2,y,txt,hi){c.save();c.strokeStyle=hi?'#ffcf66':'#8c93a0';c.fillStyle=hi?'#ffcf66':'#aab0b8';c.lineWidth=1;
+  c.beginPath();c.moveTo(x1,y);c.lineTo(x2,y);c.moveTo(x1,y-4);c.lineTo(x1,y+4);c.moveTo(x2,y-4);c.lineTo(x2,y+4);c.stroke();
+  c.font='11px Helvetica';c.textAlign='center';c.textBaseline='bottom';c.fillText(txt,(x1+x2)/2,y-3);c.restore();}
+function dimV(c,y1,y2,x,txt,hi){c.save();c.strokeStyle=hi?'#ffcf66':'#8c93a0';c.fillStyle=hi?'#ffcf66':'#aab0b8';c.lineWidth=1;
+  c.beginPath();c.moveTo(x,y1);c.lineTo(x,y2);c.moveTo(x-4,y1);c.lineTo(x+4,y1);c.moveTo(x-4,y2);c.lineTo(x+4,y2);c.stroke();
+  c.translate(x-4,(y1+y2)/2);c.rotate(-Math.PI/2);c.font='11px Helvetica';c.textAlign='center';c.textBaseline='bottom';c.fillText(txt,0,0);c.restore();}
 function planRect(w,u,W,D,depth,ud){const dep=ud||depth;
   if(w.id==='back')return{x:u.x,z:0,w:u.w,d:dep};
   if(w.id==='right')return{x:W-dep,z:u.x,w:dep,d:u.w};
@@ -424,6 +575,92 @@ function drawCell(c,r,scale,PX,PY,label,col){
   c.save();c.fillStyle='#fff';c.font='9px Helvetica';c.textAlign='center';c.textBaseline='middle';
   const cx=PX(r.x+r.w/2),cy=PY(r.z+r.d/2);const txt=(label||'').split(/[ ·]/)[0];
   if(r.w*scale>26)c.fillText(txt.slice(0,9),cx,cy);c.restore();}
+
+/* schedule list (right of drawing) + hover-to-measure */
+function planEntries(L){var es=[];
+  ((L&&L.walls)||[]).forEach(function(w){
+    (w.base||[]).forEach(function(u){es.push({label:u.code||'(base)',type:(TYPENAME[u.appliance?'appliance':u.kind]||u.kind)+(u.appliance?' · '+u.appliance:''),wall:w,unit:u});});
+    (w.upper||[]).forEach(function(u){es.push({label:u.code||'(upper)',type:TYPENAME[u.kind]||u.kind,wall:w,unit:u,upper:true});});
+    (w.windows||[]).forEach(function(win){es.push({label:'WINDOW',type:'Window',wall:w,unit:win,win:true});});
+  });
+  ((L&&L.islands)||[]).forEach(function(is){es.push({label:is.code||is.label||'Island',type:'Island / peninsula',island:is});});
+  return es;
+}
+function dimStr(u){var a=[];if(u.w)a.push(u.w);if(u.h)a.push(u.h);if(u.d)a.push(u.d);return a.length?a.join('×')+'"':'—';}
+function buildPlanSchedule(){
+  var host=document.getElementById('planSched');if(!host)return;host.innerHTML='';
+  var es=planEntries(layout);
+  if(!es.length){host.innerHTML='<div style="color:var(--muted);font-size:12px">No units yet.</div>';return;}
+  es.forEach(function(en){
+    var dim=en.island?(en.island.w+'×'+en.island.d+'"'):(en.unit?dimStr(en.unit):'');
+    var row=document.createElement('div');row.className='srow';
+    row.innerHTML='<div class="sinfo"><div class="scode"></div><div class="smeta"></div></div>';
+    row.querySelector('.scode').textContent=en.label;
+    row.querySelector('.smeta').textContent=(en.wall?en.wall.label+' · ':'')+en.type+(dim&&dim!=='—'?' · '+dim:'');
+    row.onmouseenter=function(){[].forEach.call(host.children,function(x){x.classList.remove('active');});row.classList.add('active');drawFloorPlan(layout,en);};
+    row.onmouseleave=function(){row.classList.remove('active');drawFloorPlan(layout);};
+    host.appendChild(row);
+  });
+}
+
+/* PDF export of the drawing */
+/* dimension helpers for the print drawing (larger, light theme) */
+function pdfDimH(c,x1,x2,y,txt){c.save();c.strokeStyle='#555';c.fillStyle='#222';c.lineWidth=1;
+  c.beginPath();c.moveTo(x1,y);c.lineTo(x2,y);c.moveTo(x1,y-5);c.lineTo(x1,y+5);c.moveTo(x2,y-5);c.lineTo(x2,y+5);c.stroke();
+  c.font='13px Helvetica';c.textAlign='center';c.textBaseline='bottom';if((x2-x1)>16)c.fillText(txt,(x1+x2)/2,y-3);c.restore();}
+function pdfDimV(c,y1,y2,x,txt){c.save();c.strokeStyle='#555';c.fillStyle='#222';c.lineWidth=1;
+  c.beginPath();c.moveTo(x,y1);c.lineTo(x,y2);c.moveTo(x-5,y1);c.lineTo(x+5,y1);c.moveTo(x-5,y2);c.lineTo(x+5,y2);c.stroke();
+  c.translate(x-3,(y1+y2)/2);c.rotate(-Math.PI/2);c.font='13px Helvetica';c.textAlign='center';c.textBaseline='bottom';if((y2-y1)>16)c.fillText(txt,0,0);c.restore();}
+/* high-res, print-friendly plan with labels (and per-element dimensions when withDims) */
+function renderPlanForPdf(L,withDims){
+  var W=L.room.width,D=L.room.depth,pad=96;
+  var scale=Math.max(2.4,Math.min((1560-pad*2)/W,(1080-pad*2)/D));
+  var cv=document.createElement('canvas');cv.width=W*scale+pad*2;cv.height=D*scale+pad*2;
+  var c=cv.getContext('2d');function PX(x){return pad+x*scale;}function PY(z){return pad+z*scale;}
+  c.fillStyle='#ffffff';c.fillRect(0,0,cv.width,cv.height);
+  c.strokeStyle='#222';c.lineWidth=3;c.strokeRect(PX(0),PY(0),W*scale,D*scale);
+  function cell(r,col,code,sub){c.fillStyle=col+'2e';c.fillRect(PX(r.x),PY(r.z),r.w*scale,r.d*scale);
+    c.strokeStyle=col;c.lineWidth=1.5;c.strokeRect(PX(r.x),PY(r.z),r.w*scale,r.d*scale);
+    c.save();c.translate(PX(r.x+r.w/2),PY(r.z+r.d/2));if(r.d>r.w*1.25)c.rotate(-Math.PI/2);
+    c.fillStyle='#1a1a1a';c.textAlign='center';c.textBaseline='middle';
+    var big=Math.min(r.w,r.d)*scale;if(big>20){c.font='bold 14px Helvetica';c.fillText((code||'').split(/[ ·]/)[0].slice(0,10),0,sub?-8:0);
+      if(sub&&big>34){c.font='12px Helvetica';c.fillStyle='#555';c.fillText(sub,0,9);}}c.restore();}
+  L.walls.forEach(function(w){w.base.forEach(function(u){var r=planRect(w,u,W,D,24,u.d);
+    cell(r,cellColor(u.appliance?'appliance':u.kind),u.code,withDims?dimStr(u):null);});});
+  (L.islands||[]).forEach(function(is){cell({x:is.x,z:is.z,w:is.w,d:is.d},'#8a5a9a',is.code||is.label||'Island',withDims?(is.w+'×'+is.d+'"'):null);
+    if(is.stools){c.fillStyle='#c5a572';for(var i=0;i<is.stools;i++){var sx=is.x+is.w*(i+1)/(is.stools+1),sz=is.z+is.d+8;c.beginPath();c.arc(PX(sx),PY(sz),6,0,7);c.fill();}}});
+  c.strokeStyle='#3a86b5';c.lineWidth=6;
+  L.walls.forEach(function(w){w.windows.forEach(function(win){var s=winSeg(w,win,W,D);
+    c.beginPath();c.moveTo(PX(s.x1),PY(s.z1));c.lineTo(PX(s.x2),PY(s.z2));c.stroke();});});
+  /* overall dimensions */
+  pdfDimH(c,PX(0),PX(W),PY(0)-52,W+'"');pdfDimV(c,PY(0),PY(D),PX(0)-52,D+'"');
+  /* per-element dimensions just outside each wall */
+  if(withDims){L.walls.forEach(function(w){(w.base||[]).forEach(function(u){var r=planRect(w,u,W,D,24,u.d);
+    if(w.id==='back')pdfDimH(c,PX(r.x),PX(r.x+r.w),PY(0)-26,u.w+'"');
+    else if(w.id==='front')pdfDimH(c,PX(r.x),PX(r.x+r.w),PY(D)+26,u.w+'"');
+    else if(w.id==='right')pdfDimV(c,PY(r.z),PY(r.z+r.d),PX(W)+26,u.w+'"');
+    else if(w.id==='left')pdfDimV(c,PY(r.z),PY(r.z+r.d),PX(0)-26,u.w+'"');});});}
+  return cv;
+}
+function downloadPdf(){
+  var J=window.jspdf&&window.jspdf.jsPDF;if(!J){alert('PDF library is still loading — try again in a moment.');return;}
+  if(!layout){alert('Analyze a drawing or load the demo first.');return;}
+  var inc=document.getElementById('pdfSched').checked;
+  var doc=new J({orientation:'landscape',unit:'pt',format:'a4'});
+  var PW=doc.internal.pageSize.getWidth(),PH=doc.internal.pageSize.getHeight(),M=40;
+  doc.setFontSize(17);doc.setTextColor(30);doc.text('Kitchen Drawing',M,M+4);
+  doc.setFontSize(9);doc.setTextColor(150);doc.text('Quartz City Reno · quartzcityreno.com',M,M+19);doc.setTextColor(0);
+  var cv=renderPlanForPdf(layout,inc),ratio=cv.height/cv.width;
+  var availW=PW-2*M,availH=PH-(M+44)-M;
+  var pw=availW,ph=pw*ratio;if(ph>availH){ph=availH;pw=ph/ratio;}
+  var ox=M+(availW-pw)/2;
+  doc.addImage(cv.toDataURL('image/png'),'PNG',ox,M+40,pw,ph);
+  var srcImg=document.querySelector('#draws img');
+  if(srcImg&&srcImg.naturalWidth){doc.addPage('a4','landscape');doc.setFontSize(12);doc.setTextColor(20);doc.text('Source drawing',M,M);
+    try{var rr=srcImg.naturalHeight/srcImg.naturalWidth,w2=Math.min(PW-2*M,640),h2=w2*rr;
+      if(h2>PH-2*M-20){h2=PH-2*M-20;w2=h2/rr;}doc.addImage(srcImg,'PNG',M+(PW-2*M-w2)/2,M+14,w2,h2);}catch(e){}}
+  doc.save('quartz-city-kitchen-drawing.pdf');
+}
 
 /* =================== 2D elevations tab =================== */
 function drawElevations(L){const wrap=document.getElementById('elevWrap');wrap.innerHTML='';
@@ -460,10 +697,12 @@ function drawEbox(c,x,y,w,h,label,col,drawers){c.fillStyle=col+'bb';c.fillRect(x
 /* =================== 3D builder =================== */
 const COUNTER_H=36,TOP_T=1.5,BASE_DEP=24,TOE=4,OVER=1.25,WALL_DEP=12.5,WALL_H=30,WALL_BOT=54;
 let renderer,scene,camera,kitchen,upperGroup,labelSprites=[],roomW=240,roomD=160;
+let userGroup,userIslands=[],selectedObj=null,islandDragging=false,snapOn=true,highlightLayer;
+const raycaster=new TH.Raycaster(),floorPlane=new TH.Plane(new TH.Vector3(0,1,0),0),dragOffset=new TH.Vector3();
 const M={};
 function initThree(){
   const host=document.getElementById('app3d');
-  renderer=new TH.WebGLRenderer({antialias:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  renderer=new TH.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=TH.PCFSoftShadowMap;renderer.outputEncoding=TH.sRGBEncoding;
   host.appendChild(renderer.domElement);
   scene=new TH.Scene();
@@ -487,6 +726,8 @@ function initThree(){
   M.gasket=new TH.MeshStandardMaterial({color:0x141414,roughness:0.6});
   M.cab=new TH.MeshStandardMaterial({color:0xf2efe8,roughness:0.55,metalness:0.02});
   M.island=M.cab;M.top=new TH.MeshStandardMaterial({roughness:0.18,metalness:0.04});
+  userGroup=new TH.Group();scene.add(userGroup);
+  highlightLayer=new TH.Group();scene.add(highlightLayer);
   setCounter('White Quartz');initControls();loop();
   window.addEventListener('resize',onResize3D);
 }
@@ -541,71 +782,23 @@ function build3D(L){
   const rw=box(5,116,roomD+16,M.wall);rw.position.set(roomW+3,58,roomD/2);rw.receiveShadow=true;kitchen.add(rw);
   upperGroup=new TH.Group();kitchen.add(upperGroup);
   L.walls.forEach(buildWall);
-  buildCornerCabinets(L);
-  L.islands.forEach(buildIsland);
+  syncAnalysisIslands(L);
   frameCamera();
-}
-/* Build a real corner cabinet at each inside corner, in WORLD space so it always
-   fills the junction with no gap. Fires wherever two adjoining walls both have base runs. */
-function buildCornerCabinets(L){
-  var hasB={},hasU={};
-  L.walls.forEach(function(w){if((w.base||[]).length)hasB[w.id]=true;if((w.upper||[]).length)hasU[w.id]=true;});
-  var corners=[];
-  if(hasB.back&&hasB.left)  corners.push({x:0,     z:0,     ix:1, iz:1, up:hasU.back&&hasU.left});
-  if(hasB.back&&hasB.right) corners.push({x:roomW, z:0,     ix:-1,iz:1, up:hasU.back&&hasU.right});
-  if(hasB.front&&hasB.left) corners.push({x:0,     z:roomD, ix:1, iz:-1,up:hasU.front&&hasU.left});
-  if(hasB.front&&hasB.right)corners.push({x:roomW, z:roomD, ix:-1,iz:-1,up:hasU.front&&hasU.right});
-  corners.forEach(buildCornerUnit);
-}
-function buildCornerUnit(c){
-  var S=26, bh=COUNTER_H-TOP_T-TOE, ang=Math.atan2(c.ix,c.iz);
-  var ccx=c.x+c.ix*S/2, ccz=c.z+c.iz*S/2;
-  add(kitchen,box(S,bh,S,M.cab),ccx,TOE+bh/2,ccz);
-  add(kitchen,box(S-3,TOE,S-3,M.toe),ccx,TOE/2,ccz);
-  add(kitchen,box(S+OVER*2,TOP_T,S+OVER*2,M.top),ccx,COUNTER_H-TOP_T/2,ccz); /* counter wraps the corner */
-  var dr=box(S*1.34,bh-3,0.8,M.cab); dr.position.set(ccx+c.ix*1.2,TOE+bh/2,ccz+c.iz*1.2); dr.rotation.y=ang; dr.castShadow=true; kitchen.add(dr);
-  add(kitchen,box(0.8,12,0.8,M.gold),ccx+c.ix*2.2,TOE+bh/2,ccz+c.iz*2.2);
-  labelSprite('CORNER',ccx,COUNTER_H+5,ccz,kitchen);
-  if(c.up){var bot=WALL_BOT,h=WALL_H;
-    add(upperGroup,box(S*0.86,h,S*0.86,M.cab),ccx,bot+h/2,ccz);
-    var ud=box(S*1.12,h-2,0.7,M.cab); ud.position.set(ccx+c.ix*1.2,bot+h/2,ccz+c.iz*1.2); ud.rotation.y=ang; ud.castShadow=true; upperGroup.add(ud);
-    add(upperGroup,box(0.7,12,0.7,M.gold),ccx+c.ix*2,bot+6,ccz+c.iz*2);}
 }
 function buildWall(w){
   const tf=WALLTF[w.id]||WALLTF.back;
   const gBase=new TH.Group();gBase.rotation.y=tf.rot;gBase.position.set(tf.pos[0],0,tf.pos[2]);kitchen.add(gBase);
   const gUp=new TH.Group();gUp.rotation.y=tf.rot;gUp.position.set(tf.pos[0],0,tf.pos[2]);upperGroup.add(gUp);
   const len=w.length||wallSpan(w);
-  /* base */
-  w.base.forEach(function(u){placeBase(gBase,u,len);});
-  /* uppers */
-  w.upper.forEach(function(u){placeUpper(gUp,u,len);});
-  /* windows */
-  w.windows.forEach(function(win){placeWindow(gBase,win);});
-}
-/* corner cabinet: a deep square unit tucked into the wall junction with a 45° angled door */
-function placeCorner(g,u,L,isUpper){
-  var w=u.w||36, S=Math.max(23,Math.min(w,26));
-  var isEnd=((u.x||0)+w/2) >= (L||120)/2;       /* corner at far end of the wall vs the start */
-  var x0=isEnd ? (L||S)-S : 0, cx=x0+S/2, cz=S/2;
-  var dir=isEnd?1:-1, rotY=isEnd?Math.PI/4:-Math.PI/4;
-  if(isUpper){
-    var bot=u.bottom!=null?u.bottom:WALL_BOT, h=u.h||WALL_H;
-    add(g,box(S,h,S,M.cab),cx,bot+h/2,cz);
-    var ud=box(S*1.12,h-2,0.7,M.cab); ud.position.set(cx-dir*S*0.12,bot+h/2,cz+S*0.12); ud.rotation.y=rotY; ud.castShadow=true; g.add(ud);
-    add(g,box(0.7,h*0.4,0.7,M.gold),cx-dir*S*0.12,bot+6,cz+S*0.12+0.6);
-    labelSprite(u.code||'CORNER',cx,bot+h+4,cz,kitchen);return;
-  }
-  var bh=COUNTER_H-TOP_T-TOE;
-  add(g,box(S,bh,S,M.cab),cx,TOE+bh/2,cz);
-  add(g,box(S-3,TOE,S-3,M.toe),cx,TOE/2,cz);
-  add(g,box(S+OVER,TOP_T,S+OVER,M.top),cx,COUNTER_H-TOP_T/2,cz);   /* wraps the corner */
-  var dr=box(S*1.12,bh-3,0.8,M.cab); dr.position.set(cx-dir*S*0.12,TOE+bh/2,cz+S*0.12); dr.rotation.y=rotY; dr.castShadow=true; g.add(dr);
-  add(g,box(0.8,12,0.8,M.gold),cx-dir*S*0.12,TOE+bh/2,cz+S*0.12+0.7);
-  labelSprite(u.code||'CORNER',cx,COUNTER_H+5,cz,kitchen);
+  /* left & front wall groups run opposite to the intuitive direction, so mirror unit x
+     to place x=0 at the back/junction corner (matching floor plan + corner fill) */
+  var ref=(w.id==='left')?roomD:(w.id==='front'?roomW:null);
+  function mx(u){if(ref==null)return u;var c={};for(var k in u)c[k]=u[k];c.x=ref-(u.x||0)-(u.w||24);return c;}
+  w.base.forEach(function(u){placeBase(gBase,mx(u),len);});
+  w.upper.forEach(function(u){placeUpper(gUp,mx(u),len);});
+  w.windows.forEach(function(win){placeWindow(gBase,mx(win));});
 }
 function placeBase(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2,ap=u.appliance,bh=COUNTER_H-TOP_T-TOE;
-  if(u.kind==='corner')return; /* corners are built in world space by buildCornerCabinets */
   if(ap==='fridge'){const fw=Math.max(30,w);add(g,box(fw,70,30,M.steel),x+fw/2,35,15);
     add(g,box(1.4,40,1.4,M.darkSteel),x+fw-1,40,30.2);add(g,box(fw+0.4,0.6,0.6,M.darkSteel),x+fw/2,46,30.1);
     labelSprite(u.code||'FRIDGE',x+fw/2,72,15,kitchen);return;}
@@ -625,7 +818,6 @@ function placeBase(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2,ap=u.appliance,bh=CO
     add(g,box(1.4,8,1.4,M.steel),cx,COUNTER_H+4,5);add(g,box(1.2,1.2,7,M.steel),cx,COUNTER_H+7.5,8);}
   labelSprite(u.code||'',cx,COUNTER_H+5,BASE_DEP/2,kitchen);}
 function placeUpper(g,u,L){const x=u.x||0,w=u.w||24,cx=x+w/2;
-  if(u.kind==='corner')return; /* built in world space by buildCornerCabinets */
   if(u.kind==='valance'){add(g,box(w,3,1.5,M.cab),cx,WALL_BOT-1,1.6);return;}
   if(u.kind==='hood'){add(g,box(w,8,22,M.steel),cx,WALL_BOT+8,11);add(g,box(11,18,11,M.steel),cx,WALL_BOT+18,9);
     add(g,box(w-6,6,16,M.steel),cx,WALL_BOT+3,12);labelSprite(u.code||'HOOD',cx,WALL_BOT+30,11,kitchen);return;}
@@ -672,15 +864,146 @@ function buildIsland(is){
     var lg=new TH.Mesh(new TH.CylinderGeometry(1.1,1.6,25,10),M.gold);lg.position.set(sx,12.5,sz);kitchen.add(lg);}
   labelSprite(is.code||is.label||'ISLAND',cx,COUNTER_H+6,cz,kitchen);}
 
+/* ===== draggable add-on islands / peninsulas ===== */
+function clampN(v,a,b){return Math.max(a,Math.min(b,v));}
+function buildIslandMesh(obj){
+  var w=obj.w,d=obj.d,bh=COUNTER_H-TOP_T,g=new TH.Group();
+  function a(m,x,y,z){m.position.set(x,y,z);m.castShadow=true;m.receiveShadow=true;g.add(m);return m;}
+  a(box(w,bh-1,d,M.island),0,bh/2,0);
+  a(box(w-4,TOE,d-4,M.toe),0,TOE/2,0);
+  var ov=obj.stools?13:OVER*2;
+  a(box(w+1,TOP_T,d+ov,M.top),0,COUNTER_H-TOP_T/2,ov/2);
+  var nd=Math.max(2,Math.round(w/26)),dw=w/nd;
+  for(var i=0;i<nd;i++){var xx=-w/2+dw/2+i*dw;a(box(dw-1.4,bh-5,0.7,M.island),xx,bh/2,-d/2+0.3);a(box(0.7,10,0.7,M.gold),xx,bh/2+6,-d/2-0.2);}
+  if(obj.sink){var bw=Math.min(w*0.5,28),bd=Math.min(d*0.6,17);
+    a(box(bw,1,bd,M.steel),0,COUNTER_H+0.4,0);a(box(bw-4,5,bd-4,M.darkSteel),0,COUNTER_H-2,0);
+    a(box(1.4,8,1.4,M.steel),0,COUNTER_H+4,-bd/2+2);a(box(1.2,1.2,7,M.steel),0,COUNTER_H+7.5,-bd/2+5);}
+  for(var k=0;k<(obj.stools||0);k++){var sx=-w/2+w*(k+1)/((obj.stools)+1),sz=d/2+ov*0.5+3;
+    var s=new TH.Mesh(new TH.CylinderGeometry(7,7,2,18),M.darkSteel);s.position.set(sx,26,sz);s.castShadow=true;g.add(s);
+    var lg=new TH.Mesh(new TH.CylinderGeometry(1.1,1.6,25,10),M.gold);lg.position.set(sx,12.5,sz);g.add(lg);}
+  g.position.set(obj.cx,0,obj.cz);g.rotation.y=obj.rot||0;g.userData.island=obj;obj.group=g;
+  return g;
+}
+function disposeGroup(g){g.traverse(function(o){if(o.geometry)o.geometry.dispose();});}
+function rebuildIsland(obj){if(obj.group){userGroup.remove(obj.group);disposeGroup(obj.group);}userGroup.add(buildIslandMesh(obj));}
+function addIsland(kind,sink){
+  var isP=kind==='peninsula';
+  var w=Math.round(clampN(roomW*(isP?0.4:0.3),30,130));
+  var d=Math.round(clampN(roomD*(isP?0.15:0.18),20,46));
+  var obj={kind:isP?'peninsula':'island',sink:!!sink,w:w,d:d,stools:3,rot:0,cx:roomW/2,cz:roomD*0.6,source:'user',
+    origW:w,origD:d,origCx:roomW/2,origCz:roomD*0.6,origRot:0};
+  userIslands.push(obj);userGroup.add(buildIslandMesh(obj));selectIsland(obj);
+}
+/* convert analysis islands into the same draggable objects; keep user-added ones */
+function syncAnalysisIslands(L){
+  for(var i=userIslands.length-1;i>=0;i--){if(userIslands[i].source==='analysis'){
+    if(userIslands[i].group){userGroup.remove(userIslands[i].group);disposeGroup(userIslands[i].group);}userIslands.splice(i,1);}}
+  (L.islands||[]).forEach(function(is){
+    var w=is.w||40,d=is.d||26,cx=(is.x||0)+w/2,cz=(is.z||0)+d/2;
+    if(is.attachedTo==='right')cx=roomW-w/2;else if(is.attachedTo==='left')cx=w/2;
+    if(is.attachedTo==='back')cz=d/2;else if(is.attachedTo==='front')cz=roomD-d/2;
+    var obj={kind:(is.attachedTo?'peninsula':'island'),sink:!!(is.sink||is.appliance==='sink'),w:w,d:d,
+      stools:is.stools||0,rot:0,cx:cx,cz:cz,source:'analysis',origW:w,origD:d,origCx:cx,origCz:cz,origRot:0};
+    userIslands.push(obj);userGroup.add(buildIslandMesh(obj));
+  });
+}
+/* snap a dragged island so its nearest edge sits flush to a wall or a counter front */
+function snapIsland(obj){
+  if(!snapOn)return;
+  var c=Math.abs(Math.cos(obj.rot||0)),s=Math.abs(Math.sin(obj.rot||0));
+  var hx=(c*obj.w+s*obj.d)/2,hz=(s*obj.w+c*obj.d)/2,T=10;
+  var xl=[{p:0,e:-1},{p:BASE_DEP,e:-1},{p:roomW,e:1},{p:roomW-BASE_DEP,e:1}];
+  var bx=null,bd=T;xl.forEach(function(L){var edge=obj.cx+L.e*hx;var dd=Math.abs(edge-L.p);if(dd<bd){bd=dd;bx=L;}});
+  if(bx)obj.cx=bx.p-bx.e*hx;
+  var zl=[{p:0,e:-1},{p:BASE_DEP,e:-1},{p:roomD,e:1},{p:roomD-BASE_DEP,e:1}];
+  var bz=null;bd=T;zl.forEach(function(L){var edge=obj.cz+L.e*hz;var dd=Math.abs(edge-L.p);if(dd<bd){bd=dd;bz=L;}});
+  if(bz)obj.cz=bz.p-bz.e*hz;
+}
+function resetIsland(obj){obj.w=obj.origW;obj.d=obj.origD;obj.rot=obj.origRot||0;rebuildIsland(obj);
+  setSlider('isleW','isleWv',obj.w,'"');setSlider('isleD','isleDv',obj.d,'"');setSlider('isleR','isleRv',Math.round((obj.rot||0)*180/Math.PI),'°');}
+function pointerNDC(e){var r=renderer.domElement.getBoundingClientRect();
+  return {x:((e.clientX-r.left)/r.width)*2-1,y:-((e.clientY-r.top)/r.height)*2+1};}
+function floorHit(e){var n=pointerNDC(e);raycaster.setFromCamera(n,camera);var p=new TH.Vector3();
+  return raycaster.ray.intersectPlane(floorPlane,p)?p:null;}
+function pickIsland(e){var n=pointerNDC(e);raycaster.setFromCamera(n,camera);
+  var hits=raycaster.intersectObjects(userGroup.children,true);
+  if(hits.length){var o=hits[0].object;while(o&&!(o.userData&&o.userData.island))o=o.parent;return (o&&o.userData.island)?o:null;}
+  return null;}
+function selectIsland(obj){selectedObj=obj;var P=document.getElementById('islePanel');P.classList.add('show');
+  document.getElementById('isleTitle').textContent=(obj.kind==='peninsula'?'Peninsula':'Island')+(obj.sink?' + sink':'');
+  setSlider('isleW','isleWv',obj.w,'"');setSlider('isleD','isleDv',obj.d,'"');
+  setSlider('isleR','isleRv',Math.round((obj.rot||0)*180/Math.PI),'°');setSlider('isleS','isleSv',obj.stools,'');
+  document.getElementById('isleSink').checked=!!obj.sink;}
+function setSlider(id,vid,val,suf){document.getElementById(id).value=val;document.getElementById(vid).textContent=val+suf;}
+function deselectIsland(){selectedObj=null;document.getElementById('islePanel').classList.remove('show');}
+
+/* ===== Re-analyze: clickable schedule + 3D highlight ===== */
+function hiBox(w,h,d){var m=new TH.Mesh(new TH.BoxGeometry(w,h,d),
+  new TH.MeshBasicMaterial({color:0xffcf66,transparent:true,opacity:0.34,depthTest:false}));m.renderOrder=999;return m;}
+function clearHighlight(){if(!highlightLayer)return;while(highlightLayer.children.length){var c=highlightLayer.children.pop();
+  c.traverse(function(o){if(o.geometry)o.geometry.dispose();});highlightLayer.remove(c);}}
+function highlightEntry(en){
+  clearHighlight();if(!highlightLayer)return;var g=new TH.Group();
+  if(en.island){var o=en.island;g.position.set(o.cx,0,o.cz);g.rotation.y=o.rot||0;
+    var m=hiBox(o.w+3,COUNTER_H+3,o.d+3);m.position.y=COUNTER_H/2;g.add(m);highlightLayer.add(g);return;}
+  var tf=WALLTF[en.wallId]||WALLTF.back;g.rotation.y=tf.rot;g.position.set(tf.pos[0],0,tf.pos[2]);
+  var ref=(en.wallId==='left')?roomD:(en.wallId==='front'?roomW:null);
+  var lx=(ref!=null)?ref-(en.x||0)-(en.w||24):(en.x||0),cx=lx+(en.w||24)/2;
+  if(en.isUpper){var bot=en.bottom!=null?en.bottom:WALL_BOT,h=en.h||WALL_H;
+    var mu=hiBox((en.w||24)+3,h+3,WALL_DEP+3);mu.position.set(cx,bot+h/2,WALL_DEP/2);g.add(mu);}
+  else{var mb=hiBox((en.w||24)+3,COUNTER_H+3,BASE_DEP+3);mb.position.set(cx,COUNTER_H/2,BASE_DEP/2);g.add(mb);}
+  highlightLayer.add(g);
+}
+function addRef(en){var ta=document.getElementById('redoNotes');
+  var r='['+(en.label||'unit')+(en.wall?(' – '+en.wall):'')+'] ';
+  if(ta.value && !/\s$/.test(ta.value))ta.value+=' ';ta.value+=r;ta.focus();}
+function buildRedoSchedule(){
+  var host=document.getElementById('redoSched');host.innerHTML='';
+  var byId={};((layout&&layout.walls)||[]).forEach(function(w){byId[w.id]=w;});
+  var order=['left','back','right','front'];
+  ((layout&&layout.walls)||[]).forEach(function(w){if(order.indexOf(w.id)<0)order.push(w.id);});
+  var entries=[];
+  order.forEach(function(id){var w=byId[id];if(!w)return;
+    (w.upper||[]).forEach(function(u){entries.push({label:u.code||'(upper)',type:TYPENAME[u.kind]||u.kind,wall:w.label,wallId:w.id,x:u.x,w:u.w,isUpper:true,bottom:u.bottom,h:u.h});});
+    (w.windows||[]).forEach(function(win){entries.push({label:'WINDOW',type:'Window',wall:w.label,wallId:w.id,x:win.x,w:win.w,isUpper:true,bottom:win.sill||40,h:(win.head||78)-(win.sill||40)});});
+    (w.base||[]).forEach(function(u){entries.push({label:u.code||'(base)',type:(TYPENAME[u.appliance?'appliance':u.kind]||u.kind)+(u.appliance?' · '+u.appliance:''),wall:w.label,wallId:w.id,x:u.x,w:u.w,isUpper:false});});
+  });
+  userIslands.forEach(function(o){entries.push({label:(o.kind==='peninsula'?'Peninsula':'Island'),type:(o.sink?'with sink · ':'')+((o.stools||0)+' stools'),wall:(o.source==='user'?'Added':'From drawing'),island:o});});
+  if(!entries.length){host.innerHTML='<div style="color:var(--muted);font-size:12px;text-align:center">No units yet — analyze a drawing or load the demo.</div>';return;}
+  var pinRow=null,pinEn=null;
+  entries.forEach(function(en){
+    var row=document.createElement('div');row.className='srow';
+    row.innerHTML='<div class="sinfo"><div class="scode"></div><div class="smeta"></div></div><button class="splus" title="Add to notes">+</button>';
+    row.querySelector('.scode').textContent=en.label;
+    row.querySelector('.smeta').textContent=en.type+(en.wall?(' · '+en.wall):'');
+    row.onmouseenter=function(){[].forEach.call(host.children,function(x){if(x!==pinRow)x.classList.remove('active');});
+      row.classList.add('active');highlightEntry(en);};
+    row.onmouseleave=function(){if(row!==pinRow)row.classList.remove('active');
+      if(pinRow&&pinEn){pinRow.classList.add('active');highlightEntry(pinEn);}else clearHighlight();};
+    row.onclick=function(){
+      if(pinRow===row){pinRow=null;pinEn=null;row.classList.remove('active');clearHighlight();}
+      else{if(pinRow)pinRow.classList.remove('active');pinRow=row;pinEn=en;row.classList.add('active');highlightEntry(en);}};
+    row.querySelector('.splus').onclick=function(e){e.stopPropagation();addRef(en);};
+    host.appendChild(row);
+  });
+}
+
 /* camera + controls */
 let target,radius,theta,phi,tR,tT,tP,tTar;
 function frameCamera(){const cx=roomW/2,cz=roomD/2-6;target=new TH.Vector3(cx,28,cz);
   radius=Math.max(roomW,roomD)*1.5+120;theta=-0.72;phi=1.00;tR=radius;tT=theta;tP=phi;tTar=target.clone();}
 function applyCam(){if(!tTar)return;camera.position.set(tTar.x+tR*Math.sin(tP)*Math.sin(tT),tTar.y+tR*Math.cos(tP),tTar.z+tR*Math.sin(tP)*Math.cos(tT));camera.lookAt(tTar);}
 function initControls(){let drag=false,pan=false,px=0,py=0;const el=renderer.domElement;
-  el.addEventListener('mousedown',function(e){drag=true;pan=(e.button===2||e.shiftKey);px=e.clientX;py=e.clientY;});
-  window.addEventListener('mouseup',function(){drag=false;pan=false;});
-  window.addEventListener('mousemove',function(e){if(!drag||!tTar)return;const dx=e.clientX-px,dy=e.clientY-py;px=e.clientX;py=e.clientY;
+  el.addEventListener('mousedown',function(e){
+    if(e.button===0){var g=pickIsland(e);if(g){islandDragging=true;selectIsland(g.userData.island);
+      var pt=floorHit(e);if(pt)dragOffset.set(g.position.x-pt.x,0,g.position.z-pt.z);e.preventDefault();return;}
+      if(selectedObj)deselectIsland();}
+    drag=true;pan=(e.button===2||e.shiftKey);px=e.clientX;py=e.clientY;});
+  window.addEventListener('mouseup',function(){drag=false;pan=false;islandDragging=false;});
+  window.addEventListener('mousemove',function(e){
+    if(islandDragging&&selectedObj){var pt=floorHit(e);if(pt){selectedObj.cx=pt.x+dragOffset.x;selectedObj.cz=pt.z+dragOffset.z;
+      snapIsland(selectedObj);if(selectedObj.group)selectedObj.group.position.set(selectedObj.cx,0,selectedObj.cz);}return;}
+    if(!drag||!tTar)return;const dx=e.clientX-px,dy=e.clientY-py;px=e.clientX;py=e.clientY;
     if(pan){const ps=radius*0.0016;const rl=new TH.Vector3().subVectors(camera.position,tTar);
       const rt=new TH.Vector3().crossVectors(camera.up,rl).normalize();const up=new TH.Vector3().crossVectors(rl,rt).normalize();
       target.addScaledVector(rt,-dx*ps);target.addScaledVector(up,-dy*ps);}else{theta-=dx*0.006;phi=Math.max(0.18,Math.min(1.45,phi-dy*0.006));}});
@@ -688,9 +1011,34 @@ function initControls(){let drag=false,pan=false,px=0,py=0;const el=renderer.dom
   el.addEventListener('wheel',function(e){e.preventDefault();radius=Math.max(120,Math.min(1400,radius*(1+e.deltaY*0.0011)));},{passive:false});
   let lt=null,pinch=0;function d2(e){const a=e.touches[0],b=e.touches[1];return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);}
   function ct(e){return e.touches[0]?{x:e.touches[0].clientX,y:e.touches[0].clientY}:null;}
-  el.addEventListener('touchstart',function(e){if(e.touches.length===2)pinch=d2(e);lt=ct(e);},{passive:false});
-  el.addEventListener('touchmove',function(e){e.preventDefault();if(e.touches.length===2){const d=d2(e);if(pinch)radius=Math.max(120,Math.min(1400,radius*(pinch/d)));pinch=d;}
+  el.addEventListener('touchstart',function(e){
+    if(e.touches.length===1){var g=pickIsland(e.touches[0]);if(g){islandDragging=true;selectIsland(g.userData.island);
+      var pt=floorHit(e.touches[0]);if(pt)dragOffset.set(g.position.x-pt.x,0,g.position.z-pt.z);e.preventDefault();return;}}
+    if(e.touches.length===2)pinch=d2(e);lt=ct(e);},{passive:false});
+  el.addEventListener('touchmove',function(e){e.preventDefault();
+    if(islandDragging&&selectedObj&&e.touches.length===1){var pt=floorHit(e.touches[0]);if(pt){selectedObj.cx=pt.x+dragOffset.x;selectedObj.cz=pt.z+dragOffset.z;
+      snapIsland(selectedObj);if(selectedObj.group)selectedObj.group.position.set(selectedObj.cx,0,selectedObj.cz);}return;}
+    if(e.touches.length===2){const d=d2(e);if(pinch)radius=Math.max(120,Math.min(1400,radius*(pinch/d)));pinch=d;}
     else if(e.touches.length===1&&lt&&tTar){const dx=e.touches[0].clientX-lt.x,dy=e.touches[0].clientY-lt.y;theta-=dx*0.007;phi=Math.max(0.18,Math.min(1.45,phi-dy*0.007));}lt=ct(e);},{passive:false});
+  el.addEventListener('touchend',function(){islandDragging=false;lt=null;});
+  /* add-on buttons */
+  document.getElementById('addRow').addEventListener('click',function(e){var a=e.target.dataset.add;if(!a)return;
+    addIsland(a.indexOf('peninsula')===0?'peninsula':'island', a.indexOf('sink')>=0);});
+  /* selection panel controls */
+  function bind(id,vid,suf,fn){var el2=document.getElementById(id);el2.addEventListener('input',function(){
+    if(!selectedObj)return;var v=parseFloat(el2.value);document.getElementById(vid).textContent=v+suf;fn(v);});}
+  bind('isleW','isleWv','"',function(v){selectedObj.w=v;rebuildIsland(selectedObj);});
+  bind('isleD','isleDv','"',function(v){selectedObj.d=v;rebuildIsland(selectedObj);});
+  bind('isleR','isleRv','°',function(v){selectedObj.rot=v*Math.PI/180;if(selectedObj.group)selectedObj.group.rotation.y=selectedObj.rot;});
+  bind('isleS','isleSv','',function(v){selectedObj.stools=v;rebuildIsland(selectedObj);});
+  document.getElementById('isleSink').onchange=function(){if(!selectedObj)return;selectedObj.sink=this.checked;rebuildIsland(selectedObj);};
+  document.getElementById('isleReset').onclick=function(){if(selectedObj)resetIsland(selectedObj);};
+  document.getElementById('tSnap').onchange=function(){snapOn=this.checked;};
+  document.getElementById('dlPdf').onclick=downloadPdf;
+  document.getElementById('isleClose').onclick=deselectIsland;
+  document.getElementById('isleDelete').onclick=function(){if(!selectedObj)return;
+    userGroup.remove(selectedObj.group);disposeGroup(selectedObj.group);
+    var i=userIslands.indexOf(selectedObj);if(i>=0)userIslands.splice(i,1);deselectIsland();};
   document.getElementById('viewRow').addEventListener('click',function(e){const v=e.target.dataset.v;if(!v)return;
     if(v==='corner'){radius=Math.max(roomW,roomD)*1.5+120;theta=-0.72;phi=1.0;}
     if(v==='eye'){radius=Math.max(roomW,roomD)*0.9;theta=-0.4;phi=1.34;}
@@ -707,7 +1055,8 @@ function initControls(){let drag=false,pan=false,px=0,py=0;const el=renderer.dom
   document.getElementById('tLab').onchange=function(){const v=this.checked;labelSprites.forEach(function(s){s.visible=v;});};
   document.getElementById('tSpin');
 }
-function onResize3D(){if(!renderer)return;const host=document.getElementById('app3d');const w=host.clientWidth||window.innerWidth,h=host.clientHeight||window.innerHeight;
+function onResize3D(){if(!renderer)return;var host=renderer.domElement.parentElement||document.getElementById('app3d');
+  var w=(host&&host.clientWidth)||window.innerWidth,h=(host&&host.clientHeight)||window.innerHeight;
   renderer.setSize(w,h);camera.aspect=w/h;camera.updateProjectionMatrix();}
 function loop(){requestAnimationFrame(loop);if(document.getElementById('tSpin').checked)theta+=0.0026;
   tR+=(radius-tR)*0.12;tT+=(theta-tT)*0.12;tP+=(phi-tP)*0.12;if(tTar&&target)tTar.lerp(target,0.12);applyCam();
